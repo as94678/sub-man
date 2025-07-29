@@ -18,7 +18,7 @@ import { useSubscriptions } from './hooks/useSubscriptions';
 
 const App = () => {
   const { darkMode, toggleTheme } = useTheme();
-  const { baseCurrency, exchangeRates, setBaseCurrency, updateExchangeRates } = useCurrency();
+  const { baseCurrency, exchangeRates, isLoading, lastUpdated, setBaseCurrency, updateExchangeRates } = useCurrency();
   const {
     subscriptions,
     totalMonthlySpending,

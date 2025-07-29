@@ -11,7 +11,7 @@ export const CURRENCY_SYMBOLS = {
 // 支援的貨幣列表
 export const CURRENCIES = ['USD', 'EUR', 'JPY', 'TWD'];
 
-// 預設匯率（實際應用中應從API獲取）
+// 預設匯率（作為備用值）
 export const DEFAULT_EXCHANGE_RATES = {
   USD: 31.5,
   EUR: 34.2,
@@ -52,15 +52,46 @@ export const convertToBaseCurrency = (amount, fromCurrency, baseCurrency, exchan
 };
 
 /**
- * 模擬匯率更新（實際應用中應調用真實API）
- * @param {Object} currentRates - 當前匯率
- * @returns {Object} 更新後的匯率
+ * 從 rter.info API 獲取匯率數據
+ * @returns {Promise<Object>} 匯率對象
  */
-export const updateExchangeRates = (currentRates) => {
-  return {
-    ...currentRates,
-    USD: currentRates.USD + (Math.random() - 0.5) * 0.5,
-    EUR: currentRates.EUR + (Math.random() - 0.5) * 0.5,
-    JPY: currentRates.JPY + (Math.random() - 0.5) * 0.01
-  };
+export const fetchExchangeRates = async () => {
+  try {
+    const response = await fetch('https://tw.rter.info/capi.php');
+    const data = await response.json();
+    
+    // 轉換API數據格式為我們需要的格式（以TWD為基準）
+    const rates = {
+      TWD: 1, // 台幣作為基準
+    };
+    
+    // 獲取USD對TWD的匯率
+    const usdToTwd = data['USDTWD']?.Exrate || 31.5;
+    rates.USD = 1 / usdToTwd; // TWD對USD的匯率
+    
+    // 獲取其他貨幣對USD的匯率，然後轉換為對TWD的匯率
+    if (data['USDEUR']) {
+      const usdToEur = data['USDEUR'].Exrate;
+      rates.EUR = usdToEur / usdToTwd; // TWD對EUR的匯率
+    }
+    
+    if (data['USDJPY']) {
+      const usdToJpy = data['USDJPY'].Exrate;
+      rates.JPY = usdToJpy / usdToTwd; // TWD對JPY的匯率
+    }
+    
+    console.log('匯率更新成功:', rates);
+    return rates;
+  } catch (error) {
+    console.error('匯率獲取失敗:', error);
+    return DEFAULT_EXCHANGE_RATES;
+  }
+};
+
+/**
+ * 更新匯率（從真實API獲取）
+ * @returns {Promise<Object>} 更新後的匯率
+ */
+export const updateExchangeRates = async () => {
+  return await fetchExchangeRates();
 };
