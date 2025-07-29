@@ -65,19 +65,21 @@ export const fetchExchangeRates = async () => {
       TWD: 1, // 台幣作為基準
     };
     
-    // 獲取USD對TWD的匯率
-    const usdToTwd = data['USDTWD']?.Exrate || 31.5;
-    rates.USD = 1 / usdToTwd; // TWD對USD的匯率
+    // 獲取USD對TWD的匯率（1 USD = X TWD）
+    const usdToTwd = data['USDTWD']?.Exrate || 29.75;
+    rates.USD = usdToTwd; // 1 USD = 29.75 TWD
     
     // 獲取其他貨幣對USD的匯率，然後轉換為對TWD的匯率
     if (data['USDEUR']) {
-      const usdToEur = data['USDEUR'].Exrate;
-      rates.EUR = usdToEur / usdToTwd; // TWD對EUR的匯率
+      const usdToEur = data['USDEUR'].Exrate; // 1 USD = X EUR
+      // 1 EUR = (1/usdToEur) USD = (usdToTwd/usdToEur) TWD
+      rates.EUR = usdToTwd / usdToEur;
     }
     
     if (data['USDJPY']) {
-      const usdToJpy = data['USDJPY'].Exrate;
-      rates.JPY = usdToJpy / usdToTwd; // TWD對JPY的匯率
+      const usdToJpy = data['USDJPY'].Exrate; // 1 USD = X JPY  
+      // 1 JPY = (1/usdToJpy) USD = (usdToTwd/usdToJpy) TWD
+      rates.JPY = usdToTwd / usdToJpy;
     }
     
     console.log('匯率更新成功:', rates);
