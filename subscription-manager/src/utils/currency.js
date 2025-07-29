@@ -57,8 +57,18 @@ export const convertToBaseCurrency = (amount, fromCurrency, baseCurrency, exchan
  */
 export const fetchExchangeRates = async () => {
   try {
-    const response = await fetch('https://tw.rter.info/capi.php');
-    const data = await response.json();
+    // 在開發環境使用代理，生產環境使用 CORS 代理服務
+    const apiUrl = import.meta.env.DEV 
+      ? '/api/exchange' 
+      : 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://tw.rter.info/capi.php');
+    
+    const response = await fetch(apiUrl);
+    let data = await response.json();
+    
+    // 如果使用 CORS 代理服務，需要解析包装的數據
+    if (!import.meta.env.DEV && data.contents) {
+      data = JSON.parse(data.contents);
+    }
     
     // 轉換API數據格式為我們需要的格式（以TWD為基準）
     const rates = {
