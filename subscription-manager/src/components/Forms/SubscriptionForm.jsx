@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { CATEGORIES, COLORS } from '../../data/initialData';
 import { CURRENCIES } from '../../utils/currency';
 import { formatCurrency, convertToBaseCurrency } from '../../utils/currency';
+import ServiceSelector from './ServiceSelector';
 
 const SubscriptionForm = ({ 
   subscription, 
@@ -50,6 +51,14 @@ const SubscriptionForm = ({
     }));
   };
 
+  // 處理服務選擇 - 自動填入相關欄位
+  const handleServiceSelect = (serviceData) => {
+    setFormData(prev => ({
+      ...prev,
+      ...serviceData
+    }));
+  };
+
   return (
     <form onSubmit={handleSubmit}>
       <h3 className="text-lg font-semibold mb-4">
@@ -57,66 +66,105 @@ const SubscriptionForm = ({
       </h3>
       
       <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="服務名稱"
-          value={formData.name}
-          onChange={(e) => handleInputChange('name', e.target.value)}
-          className={`w-full p-3 rounded-lg border ${
-            darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-          } transition-colors`}
-          required
-        />
-        
-        <div className="flex space-x-2">
-          <input
-            type="number"
-            placeholder="價格"
-            step="0.01"
-            value={formData.price}
-            onChange={(e) => handleInputChange('price', e.target.value)}
-            className={`flex-1 p-3 rounded-lg border ${
-              darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-            } transition-colors`}
-            required
+        {/* 智能服務選擇器 */}
+        <div>
+          <label className={`block text-sm font-medium mb-2 ${
+            darkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
+            服務名稱
+          </label>
+          <ServiceSelector
+            value={formData.name}
+            onChange={(value) => handleInputChange('name', value)}
+            onServiceSelect={handleServiceSelect}
+            darkMode={darkMode}
+            placeholder="搜尋或輸入服務名稱..."
           />
+          <p className={`text-xs mt-1 ${
+            darkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            💡 選擇熱門服務會自動填入價格和類別
+          </p>
+        </div>
+        
+        {/* 價格和貨幣 */}
+        <div>
+          <label className={`block text-sm font-medium mb-2 ${
+            darkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
+            價格
+          </label>
+          <div className="flex space-x-2">
+            <input
+              type="number"
+              placeholder="0.00"
+              step="0.01"
+              value={formData.price}
+              onChange={(e) => handleInputChange('price', e.target.value)}
+              className={`flex-1 p-3 rounded-lg border ${
+                darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+              } transition-colors`}
+              required
+            />
+            <select
+              value={formData.currency}
+              onChange={(e) => handleInputChange('currency', e.target.value)}
+              className={`p-3 rounded-lg border ${
+                darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+              } transition-colors`}
+            >
+              {CURRENCIES.map(currency => (
+                <option key={currency} value={currency}>{currency}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        
+        {/* 類別 */}
+        <div>
+          <label className={`block text-sm font-medium mb-2 ${
+            darkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
+            類別
+          </label>
           <select
-            value={formData.currency}
-            onChange={(e) => handleInputChange('currency', e.target.value)}
-            className={`p-3 rounded-lg border ${
+            value={formData.category}
+            onChange={(e) => handleInputChange('category', e.target.value)}
+            className={`w-full p-3 rounded-lg border ${
               darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
             } transition-colors`}
           >
-            {CURRENCIES.map(currency => (
-              <option key={currency} value={currency}>{currency}</option>
+            {CATEGORIES.map(category => (
+              <option key={category} value={category}>{category}</option>
             ))}
           </select>
         </div>
         
-        <select
-          value={formData.category}
-          onChange={(e) => handleInputChange('category', e.target.value)}
-          className={`w-full p-3 rounded-lg border ${
-            darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-          } transition-colors`}
-        >
-          {CATEGORIES.map(category => (
-            <option key={category} value={category}>{category}</option>
-          ))}
-        </select>
-        
-        <input
-          type="date"
-          value={formData.renewalDate}
-          onChange={(e) => handleInputChange('renewalDate', e.target.value)}
-          className={`w-full p-3 rounded-lg border ${
-            darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-          } transition-colors`}
-          required
-        />
-
+        {/* 續費日期 */}
         <div>
-          <label className="block text-sm text-gray-600 mb-2">選擇顏色</label>
+          <label className={`block text-sm font-medium mb-2 ${
+            darkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
+            下次續費日期
+          </label>
+          <input
+            type="date"
+            value={formData.renewalDate}
+            onChange={(e) => handleInputChange('renewalDate', e.target.value)}
+            className={`w-full p-3 rounded-lg border ${
+              darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+            } transition-colors`}
+            required
+          />
+        </div>
+
+        {/* 顏色選擇 */}
+        <div>
+          <label className={`block text-sm font-medium mb-2 ${
+            darkMode ? 'text-gray-300' : 'text-gray-700'
+          }`}>
+            主題顏色
+          </label>
           <div className="flex space-x-2 flex-wrap">
             {COLORS.map(color => (
               <button
@@ -124,21 +172,58 @@ const SubscriptionForm = ({
                 type="button"
                 onClick={() => handleInputChange('color', color)}
                 className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${
-                  formData.color === color ? 'border-gray-400' : 'border-transparent'
+                  formData.color === color 
+                    ? 'border-blue-500 ring-2 ring-blue-200' 
+                    : 'border-gray-300 hover:border-gray-400'
                 }`}
                 style={{backgroundColor: color}}
+                title={`選擇 ${color} 顏色`}
               />
             ))}
           </div>
+          <p className={`text-xs mt-1 ${
+            darkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            選擇一個代表此服務的顏色
+          </p>
         </div>
 
-        {isEditing && formData.price && (
-          <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-            <p className="text-sm text-gray-600 mb-2">價格預覽：</p>
-            <div className="space-y-1 text-sm">
-              <div>原價格: {formatCurrency(parseFloat(formData.price) || 0, formData.currency)}</div>
+        {formData.price && (
+          <div className={`p-4 rounded-lg border ${
+            darkMode ? 'bg-gray-800 border-gray-600' : 'bg-blue-50 border-blue-200'
+          }`}>
+            <div className="flex items-center space-x-2 mb-3">
+              <div className={`w-2 h-2 rounded-full ${
+                darkMode ? 'bg-blue-400' : 'bg-blue-500'
+              }`}></div>
+              <p className={`text-sm font-medium ${
+                darkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                價格預覽
+              </p>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className={`text-sm ${
+                  darkMode ? 'text-gray-400' : 'text-gray-600'
+                }`}>
+                  原價格:
+                </span>
+                <span className="font-medium">
+                  {formatCurrency(parseFloat(formData.price) || 0, formData.currency)}
+                </span>
+              </div>
               {formData.currency !== baseCurrency && (
-                <div>轉換價格: {formatCurrency(convertToBaseCurrency(parseFloat(formData.price) || 0, formData.currency, baseCurrency, exchangeRates), baseCurrency)}</div>
+                <div className="flex justify-between items-center">
+                  <span className={`text-sm ${
+                    darkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
+                    轉換為 {baseCurrency}:
+                  </span>
+                  <span className="font-medium text-blue-600">
+                    {formatCurrency(convertToBaseCurrency(parseFloat(formData.price) || 0, formData.currency, baseCurrency, exchangeRates), baseCurrency)}
+                  </span>
+                </div>
               )}
             </div>
           </div>

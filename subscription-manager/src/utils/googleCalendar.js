@@ -1,13 +1,14 @@
 // src/utils/googleCalendar.js
 
 import { formatCurrency } from './currency';
+import { getNextRenewalDate } from './calendar';
 
 /**
  * 將訂閱加入Google日曆
  * @param {Object} subscription - 訂閱對象
  */
 export const addToGoogleCalendar = (subscription) => {
-  const startDate = new Date(subscription.renewalDate);
+  const startDate = getNextRenewalDate(subscription.renewalDate);
   const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1小時後結束
   
   const eventTitle = `${subscription.name} 訂閱扣款`;

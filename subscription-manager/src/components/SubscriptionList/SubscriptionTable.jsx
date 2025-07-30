@@ -4,6 +4,8 @@ import React from 'react';
 import { Calendar, Edit2, Trash2 } from 'lucide-react';
 import { formatCurrency, convertToBaseCurrency } from '../../utils/currency';
 import { addToGoogleCalendar } from '../../utils/googleCalendar';
+import { getNextRenewalDate } from '../../utils/calendar';
+import ServiceIcon from '../Common/ServiceIcon';
 
 const SubscriptionTable = ({ 
   subscriptions, 
@@ -36,10 +38,11 @@ const SubscriptionTable = ({
             >
               <td className="py-3 px-4">
                 <div className="flex items-center space-x-3">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
-                    style={{backgroundColor: sub.color}}
-                  ></div>
+                  <ServiceIcon 
+                    serviceName={sub.name}
+                    color={sub.color}
+                    size="sm"
+                  />
                   <span className="font-medium">{sub.name}</span>
                 </div>
               </td>
@@ -67,7 +70,7 @@ const SubscriptionTable = ({
                 </span>
               </td>
               <td className="py-3 px-4 text-sm">
-                {new Date(sub.renewalDate).toLocaleDateString('zh-TW')}
+                {getNextRenewalDate(sub.renewalDate).toLocaleDateString('zh-TW')}
               </td>
               <td className="py-3 px-4">
                 <div className="flex space-x-2">

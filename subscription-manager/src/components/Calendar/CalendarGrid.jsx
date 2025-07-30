@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { formatCurrency } from '../../utils/currency';
+import ServiceIcon from '../Common/ServiceIcon';
 
 const CalendarGrid = ({ calendar, darkMode }) => {
   const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
@@ -44,11 +45,17 @@ const CalendarGrid = ({ calendar, darkMode }) => {
                   {day.subscriptions.map(sub => (
                     <div
                       key={sub.id}
-                      className="text-xs p-1 rounded truncate"
+                      className="flex items-center space-x-1 text-xs p-1 rounded"
                       style={{ backgroundColor: sub.color + '20', color: sub.color }}
                       title={`${sub.name} - ${formatCurrency(sub.price, sub.currency)}`}
                     >
-                      {sub.name}
+                      <ServiceIcon 
+                        serviceName={sub.name}
+                        color={sub.color}
+                        size="xs"
+                        className="flex-shrink-0"
+                      />
+                      <span className="truncate text-xs">{sub.name}</span>
                     </div>
                   ))}
                 </div>
