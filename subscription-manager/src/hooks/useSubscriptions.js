@@ -1,12 +1,50 @@
 // src/hooks/useSubscriptions.js
 
-import { useState, useMemo } from 'react';
-import { INITIAL_SUBSCRIPTIONS, CATEGORIES, COLORS } from '../data/initialData';
+import { useState, useMemo, useEffect } from 'react';
+import { CATEGORIES, COLORS } from '../data/initialData';
 import { convertToBaseCurrency } from '../utils/currency';
 import { getUpcomingRenewals } from '../utils/calendar';
+import { subscriptionsAPI } from '../services/api';
+import { useAuth } from './useAuth.jsx';
 
 export const useSubscriptions = (baseCurrency, exchangeRates) => {
-  const [subscriptions, setSubscriptions] = useState(INITIAL_SUBSCRIPTIONS);
+  const { isAuthenticated } = useAuth();
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // 載入訂閱資料
+  const loadSubscriptions = async () => {
+    if (!isAuthenticated) {
+      setSubscriptions([]);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await subscriptionsAPI.getAll();
+      
+      // 轉換日期格式和數據類型
+      const formattedData = data.map(sub => ({
+        ...sub,
+        price: parseFloat(sub.price),
+        renewalDate: sub.renewalDate.split('T')[0], // 轉換為 YYYY-MM-DD 格式
+      }));
+      
+      setSubscriptions(formattedData);
+    } catch (err) {
+      console.error('載入訂閱失敗:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 當認證狀態改變時重新載入資料
+  useEffect(() => {
+    loadSubscriptions();
+  }, [isAuthenticated]);
 
   // 計算總月花費（轉換為基準貨幣）
   const totalMonthlySpending = useMemo(() => {
@@ -45,41 +83,84 @@ export const useSubscriptions = (baseCurrency, exchangeRates) => {
   }, [subscriptions]);
 
   // 新增訂閱
-  const addSubscription = (subscriptionData) => {
-    const newSubscription = {
-      ...subscriptionData,
-      id: Date.now(),
-      price: parseFloat(subscriptionData.price)
-    };
-    setSubscriptions(prev => [...prev, newSubscription]);
+  const addSubscription = async (subscriptionData) => {
+    try {
+      setError(null);
+      const newSubscription = await subscriptionsAPI.create({
+        ...subscriptionData,
+        price: parseFloat(subscriptionData.price)
+      });
+      
+      // 格式化新訂閱並加入本地狀態
+      const formattedSubscription = {
+        ...newSubscription,
+        price: parseFloat(newSubscription.price),
+        renewalDate: newSubscription.renewalDate.split('T')[0],
+      };
+      
+      setSubscriptions(prev => [...prev, formattedSubscription]);
+      return { success: true };
+    } catch (err) {
+      console.error('新增訂閱失敗:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    }
   };
 
   // 更新訂閱
-  const updateSubscription = (subscriptionData) => {
-    const updatedSubscription = {
-      ...subscriptionData,
-      price: parseFloat(subscriptionData.price)
-    };
-    setSubscriptions(prev => 
-      prev.map(sub => 
-        sub.id === subscriptionData.id ? updatedSubscription : sub
-      )
-    );
+  const updateSubscription = async (subscriptionData) => {
+    try {
+      setError(null);
+      const updatedSubscription = await subscriptionsAPI.update(subscriptionData.id, {
+        ...subscriptionData,
+        price: parseFloat(subscriptionData.price)
+      });
+      
+      // 格式化更新的訂閱並更新本地狀態
+      const formattedSubscription = {
+        ...updatedSubscription,
+        price: parseFloat(updatedSubscription.price),
+        renewalDate: updatedSubscription.renewalDate.split('T')[0],
+      };
+      
+      setSubscriptions(prev => 
+        prev.map(sub => 
+          sub.id === subscriptionData.id ? formattedSubscription : sub
+        )
+      );
+      return { success: true };
+    } catch (err) {
+      console.error('更新訂閱失敗:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    }
   };
 
   // 刪除訂閱
-  const deleteSubscription = (id) => {
-    setSubscriptions(prev => prev.filter(sub => sub.id !== id));
+  const deleteSubscription = async (id) => {
+    try {
+      setError(null);
+      await subscriptionsAPI.delete(id);
+      setSubscriptions(prev => prev.filter(sub => sub.id !== id));
+      return { success: true };
+    } catch (err) {
+      console.error('刪除訂閱失敗:', err);
+      setError(err.message);
+      return { success: false, error: err.message };
+    }
   };
 
   return {
     subscriptions,
+    loading,
+    error,
     totalMonthlySpending,
     categoryData,
     sortedSubscriptions,
     upcomingRenewals,
     addSubscription,
     updateSubscription,
-    deleteSubscription
+    deleteSubscription,
+    refreshSubscriptions: loadSubscriptions,
   };
 };
