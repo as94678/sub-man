@@ -11,8 +11,8 @@ import ListView from './components/SubscriptionList/ListView';
 import SubscriptionForm from './components/Forms/SubscriptionForm';
 import FloatingAddButton from './components/Common/FloatingAddButton';
 import Modal from './components/Common/Modal';
-import LoginForm from './components/Auth/LoginForm';
-import RegisterForm from './components/Auth/RegisterForm';
+import AuthModal from './components/Auth/AuthModal';
+import ProfileView from './components/User/ProfileView';
 
 import { useTheme } from './hooks/useTheme';
 import { useCurrency } from './hooks/useCurrency';
@@ -41,11 +41,12 @@ const MainApp = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingSubscription, setEditingSubscription] = useState(null);
   const [showCurrencyConverter, setShowCurrencyConverter] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' 或 'register'
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   // 認證相關處理
-  const handleShowLogin = () => setAuthMode('login');
-  const handleShowRegister = () => setAuthMode('register');
+  const handleShowLogin = () => setShowAuthModal(true);
+  const handleCloseAuth = () => setShowAuthModal(false);
 
   const handleShowAddForm = () => {
     setEditingSubscription(null);
@@ -86,12 +87,41 @@ const MainApp = () => {
     }
   };
 
-  // 如果用戶未登入，顯示登入/註冊頁面
-  if (!isAuthenticated) {
-    return authMode === 'login' ? (
-      <LoginForm onSwitchToRegister={handleShowRegister} />
-    ) : (
-      <RegisterForm onSwitchToLogin={handleShowLogin} />
+  // 關閉認證模態框當登入成功
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false);
+  };
+
+  // 如果正在顯示個人資料頁面
+  if (showProfile) {
+    return (
+      <div className={`min-h-screen transition-colors duration-300 ${
+        darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-br from-pink-50 to-blue-50 text-gray-800'
+      }`}>
+        <Header
+          darkMode={darkMode}
+          toggleTheme={toggleTheme}
+          baseCurrency={baseCurrency}
+          setBaseCurrency={setBaseCurrency}
+          updateExchangeRates={updateExchangeRates}
+          showCurrencyConverter={showCurrencyConverter}
+          setShowCurrencyConverter={setShowCurrencyConverter}
+          user={user}
+          onLogout={logout}
+          onShowProfile={() => setShowProfile(true)}
+        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <button
+            onClick={() => setShowProfile(false)}
+            className={`mb-4 px-4 py-2 rounded-md ${
+              darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
+            } transition-colors`}
+          >
+            ← 返回主頁
+          </button>
+          <ProfileView darkMode={darkMode} />
+        </div>
+      </div>
     );
   }
 
@@ -159,6 +189,8 @@ const MainApp = () => {
         setShowCurrencyConverter={setShowCurrencyConverter}
         user={user}
         onLogout={logout}
+        onShowProfile={() => setShowProfile(true)}
+        onShowLogin={handleShowLogin}
       />
 
       <CurrencyConverter
@@ -198,6 +230,13 @@ const MainApp = () => {
           exchangeRates={exchangeRates}
         />
       </Modal>
+
+      {/* 認證模態框 */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={handleCloseAuth}
+        darkMode={darkMode}
+      />
     </div>
   );
 };

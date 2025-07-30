@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import subscriptionRoutes from './routes/subscriptions.js';
+import userRoutes from './routes/user.js';
 
 // 載入環境變數
 dotenv.config();
@@ -22,6 +23,7 @@ app.use(express.json());
 // API 路由
 app.use('/api/auth', authRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/user', userRoutes);
 
 // 基本路由
 app.get('/', (req, res) => {

@@ -1,7 +1,7 @@
 // src/hooks/useSubscriptions.js
 
 import { useState, useMemo, useEffect } from 'react';
-import { CATEGORIES, COLORS } from '../data/initialData';
+import { INITIAL_SUBSCRIPTIONS, CATEGORIES, COLORS } from '../data/initialData';
 import { convertToBaseCurrency } from '../utils/currency';
 import { getUpcomingRenewals } from '../utils/calendar';
 import { subscriptionsAPI } from '../services/api';
@@ -9,14 +9,14 @@ import { useAuth } from './useAuth.jsx';
 
 export const useSubscriptions = (baseCurrency, exchangeRates) => {
   const { isAuthenticated } = useAuth();
-  const [subscriptions, setSubscriptions] = useState([]);
+  const [subscriptions, setSubscriptions] = useState(INITIAL_SUBSCRIPTIONS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   // 載入訂閱資料
   const loadSubscriptions = async () => {
     if (!isAuthenticated) {
-      setSubscriptions([]);
+      setSubscriptions(INITIAL_SUBSCRIPTIONS);
       return;
     }
 
@@ -84,6 +84,17 @@ export const useSubscriptions = (baseCurrency, exchangeRates) => {
 
   // 新增訂閱
   const addSubscription = async (subscriptionData) => {
+    if (!isAuthenticated) {
+      // 訪客模式：本地新增
+      const newSubscription = {
+        ...subscriptionData,
+        id: Date.now(),
+        price: parseFloat(subscriptionData.price)
+      };
+      setSubscriptions(prev => [...prev, newSubscription]);
+      return { success: true };
+    }
+
     try {
       setError(null);
       const newSubscription = await subscriptionsAPI.create({
@@ -109,6 +120,20 @@ export const useSubscriptions = (baseCurrency, exchangeRates) => {
 
   // 更新訂閱
   const updateSubscription = async (subscriptionData) => {
+    if (!isAuthenticated) {
+      // 訪客模式：本地更新
+      const updatedSubscription = {
+        ...subscriptionData,
+        price: parseFloat(subscriptionData.price)
+      };
+      setSubscriptions(prev => 
+        prev.map(sub => 
+          sub.id === subscriptionData.id ? updatedSubscription : sub
+        )
+      );
+      return { success: true };
+    }
+
     try {
       setError(null);
       const updatedSubscription = await subscriptionsAPI.update(subscriptionData.id, {
@@ -138,6 +163,12 @@ export const useSubscriptions = (baseCurrency, exchangeRates) => {
 
   // 刪除訂閱
   const deleteSubscription = async (id) => {
+    if (!isAuthenticated) {
+      // 訪客模式：本地刪除
+      setSubscriptions(prev => prev.filter(sub => sub.id !== id));
+      return { success: true };
+    }
+
     try {
       setError(null);
       await subscriptionsAPI.delete(id);

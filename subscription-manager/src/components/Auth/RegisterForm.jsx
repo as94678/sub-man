@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 
-const RegisterForm = ({ onSwitchToLogin }) => {
+const RegisterForm = ({ onSwitchToLogin, isModal = false }) => {
   const { register, loading, error } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
@@ -39,7 +39,10 @@ const RegisterForm = ({ onSwitchToLogin }) => {
       password: formData.password,
     });
 
-    if (!result.success) {
+    if (result.success && isModal) {
+      // 在模態框中註冊成功，關閉模態框
+      window.location.reload(); // 重新整理以載入用戶資料
+    } else if (!result.success) {
       setLocalError(result.error);
     }
   };
@@ -51,14 +54,36 @@ const RegisterForm = ({ onSwitchToLogin }) => {
     });
   };
 
+  const containerClass = isModal 
+    ? "w-full space-y-6" 
+    : "min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900";
+
+  const formWrapperClass = isModal 
+    ? "w-full" 
+    : "max-w-md w-full space-y-8";
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            註冊新帳戶
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+    <div className={containerClass}>
+      <div className={formWrapperClass}>
+        {!isModal && (
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+              註冊新帳戶
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
+              或者{' '}
+              <button
+                onClick={onSwitchToLogin}
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                登入現有帳戶
+              </button>
+            </p>
+          </div>
+        )}
+        
+        {isModal && (
+          <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-4">
             或者{' '}
             <button
               onClick={onSwitchToLogin}
@@ -67,7 +92,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
               登入現有帳戶
             </button>
           </p>
-        </div>
+        )}
         
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">

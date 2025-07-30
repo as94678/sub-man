@@ -126,5 +126,54 @@ export const subscriptionsAPI = {
   },
 };
 
+// 用戶管理相關 API
+export const userAPI = {
+  // 取得用戶完整資料
+  getProfile: async () => {
+    const response = await apiRequest('/user/profile');
+    return response.user;
+  },
+
+  // 更新用戶基本資料
+  updateProfile: async (profileData) => {
+    const response = await apiRequest('/user/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    });
+    return response;
+  },
+
+  // 修改密碼
+  changePassword: async (passwordData) => {
+    return await apiRequest('/user/password', {
+      method: 'PUT',
+      body: JSON.stringify(passwordData),
+    });
+  },
+
+  // 更新用戶設定
+  updateSettings: async (settings) => {
+    const response = await apiRequest('/user/settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+    return response;
+  },
+
+  // 取得帳戶統計
+  getStats: async () => {
+    const response = await apiRequest('/user/stats');
+    return response.stats;
+  },
+
+  // 刪除帳戶
+  deleteAccount: async (password) => {
+    return await apiRequest('/user/account', {
+      method: 'DELETE',
+      body: JSON.stringify({ password }),
+    });
+  },
+};
+
 // 導出工具函數
 export { getAuthToken, setAuthToken, clearAuthToken };

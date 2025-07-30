@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       const response = await authAPI.login(credentials);
       setUser(response.user);
-      return { success: true };
+      return { success: true, user: response.user };
     } catch (error) {
       setError(error.message);
       return { success: false, error: error.message };
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       const response = await authAPI.register(userData);
       setUser(response.user);
-      return { success: true };
+      return { success: true, user: response.user };
     } catch (error) {
       setError(error.message);
       return { success: false, error: error.message };
