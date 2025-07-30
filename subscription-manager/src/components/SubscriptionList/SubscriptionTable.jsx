@@ -5,6 +5,7 @@ import { Calendar, Edit2, Trash2 } from 'lucide-react';
 import { formatCurrency, convertToBaseCurrency } from '../../utils/currency';
 import { addToGoogleCalendar } from '../../utils/googleCalendar';
 import { getNextRenewalDate } from '../../utils/calendar';
+import { CATEGORIES, COLORS } from '../../data/initialData';
 import ServiceIcon from '../Common/ServiceIcon';
 
 const SubscriptionTable = ({ 
@@ -15,6 +16,12 @@ const SubscriptionTable = ({
   onEdit,
   onDelete
 }) => {
+  // 獲取類別對應的顏色
+  const getCategoryColor = (category) => {
+    const categoryIndex = CATEGORIES.indexOf(category);
+    return categoryIndex !== -1 ? COLORS[categoryIndex] : COLORS[0];
+  };
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
@@ -64,7 +71,10 @@ const SubscriptionTable = ({
               <td className="py-3 px-4">
                 <span 
                   className="px-2 py-1 text-xs rounded-full bg-opacity-20" 
-                  style={{backgroundColor: sub.color, color: sub.color}}
+                  style={{
+                    backgroundColor: `${getCategoryColor(sub.category)}20`, 
+                    color: getCategoryColor(sub.category)
+                  }}
                 >
                   {sub.category}
                 </span>
