@@ -4,6 +4,7 @@ import { GmailService } from '../services/gmailService';
 import { EmailParser } from '../utils/emailPatterns';
 import { validateGmailConfig } from '../config/gmail';
 import { useAuth } from '../hooks/useAuth';
+import EmailDebugger from './Debug/EmailDebugger';
 
 const GmailScanner = ({ onSubscriptionsFound }) => {
   const { user, isAuthenticated } = useAuth();
@@ -16,6 +17,7 @@ const GmailScanner = ({ onSubscriptionsFound }) => {
   const [totalEmails, setTotalEmails] = useState(0);
   const [showSetupGuide, setShowSetupGuide] = useState(false);
   const [configValid, setConfigValid] = useState(false);
+  const [debugEmails, setDebugEmails] = useState([]); // 儲存郵件用於調試
 
   // 檢查 Google API 和配置
   useEffect(() => {
@@ -79,9 +81,25 @@ const GmailScanner = ({ onSubscriptionsFound }) => {
         
         const emailDetails = await gmailService.getEmailDetails(message.id);
         if (emailDetails) {
+          // 儲存郵件用於調試
+          setDebugEmails(prev => [...prev, emailDetails]);
+          
+          console.log(`📧 郵件 ${i + 1}:`, {
+            from: emailDetails.from,
+            subject: emailDetails.subject,
+            bodyPreview: emailDetails.body ? emailDetails.body.substring(0, 200) + '...' : '無內容'
+          });
+          
           const subscription = EmailParser.parseSubscriptionEmail(emailDetails);
-          if (subscription && subscription.confidence >= 60) {
-            subscriptions.push(subscription);
+          if (subscription) {
+            console.log(`✅ 識別結果 (信心度: ${subscription.confidence}%):`, subscription);
+            if (subscription.confidence >= 60) {
+              subscriptions.push(subscription);
+            } else {
+              console.log(`❌ 信心度太低 (${subscription.confidence}% < 60%)，不加入`);
+            }
+          } else {
+            console.log(`❌ 無法識別為訂閱服務`);
           }
         }
         
@@ -107,7 +125,19 @@ const GmailScanner = ({ onSubscriptionsFound }) => {
       // 更詳細的錯誤處理
       let errorMessage = '未知錯誤';
       
-      if (error.error === 'idpiframe_initialization_failed') {
+      if (error.message && error.message.includes('授權已過期')) {
+        errorMessage = 'Gmail 授權已過期，請重新登入以獲取新的授權';
+        // 清除過期的 tokens
+        localStorage.removeItem('gmail_access_token');
+        localStorage.removeItem('authToken');
+        
+        // 提示用戶重新登入
+        setTimeout(() => {
+          if (window.confirm('Gmail 授權已過期，需要重新登入。是否現在重新登入？')) {
+            window.location.reload();
+          }
+        }, 1000);
+      } else if (error.error === 'idpiframe_initialization_failed') {
         errorMessage = `Google OAuth 初始化失敗：${error.details || error.message}`;
       } else if (error.message && error.message.includes('deprecated')) {
         errorMessage = 'Google API 已更新。請檢查是否使用最新的驗證方式。';
@@ -163,6 +193,7 @@ const GmailScanner = ({ onSubscriptionsFound }) => {
     setError(null);
     setEmailsScanned(0);
     setTotalEmails(0);
+    setDebugEmails([]); // 清除調試資料
   };
 
   // 狀態訊息
@@ -317,6 +348,19 @@ const GmailScanner = ({ onSubscriptionsFound }) => {
               >
                 重新掃描
               </button>
+              
+              {/* 調試工具 */}
+              {debugEmails.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="font-medium mb-3">🔧 調試資訊</h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    掃描了 {debugEmails.length} 封郵件，以下是詳細資料：
+                  </p>
+                  {debugEmails.map((email, index) => (
+                    <EmailDebugger key={email.id} emailDetails={email} />
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

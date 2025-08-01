@@ -102,6 +102,257 @@ export const subscriptionPatterns = {
     defaultAmount: { TWD: 30, USD: 0.99 },
     category: 'cloud',
     color: '#007AFF'
+  },
+
+  anthropic: {
+    senders: ['invoice+statements@mail.anthropic.com', 'noreply@anthropic.com'],
+    keywords: ['anthropic', 'claude'],
+    subjects: ['Your receipt from Anthropic', 'Anthropic', 'Claude'],
+    patterns: {
+      amount: [
+        /\$(\d+\.?\d*)/gi,
+        /USD\s*\$?(\d+\.?\d*)/gi
+      ],
+      renewal: [
+        /next.*?billing.*?(\d{1,2})/gi,
+        /renew.*?on.*?(\d{1,2})/gi
+      ]
+    },
+    defaultAmount: { USD: 20.00 },
+    category: 'ai',
+    color: '#D97706'
+  },
+
+  openai: {
+    senders: ['noreply@openai.com', 'billing@openai.com'],
+    keywords: ['openai', 'chatgpt'],
+    subjects: ['OpenAI', 'ChatGPT', 'Your ChatGPT Plus'],
+    patterns: {
+      amount: [
+        /\$(\d+\.?\d*)/gi,
+        /USD\s*\$?(\d+\.?\d*)/gi
+      ],
+      renewal: [
+        /next.*?billing.*?(\d{1,2})/gi,
+        /renew.*?on.*?(\d{1,2})/gi
+      ]
+    },
+    defaultAmount: { USD: 20.00 },
+    category: 'ai',
+    color: '#00A67E'
+  },
+
+  notion: {
+    senders: ['team@makenotion.com', 'noreply@notion.so'],
+    keywords: ['notion'],
+    subjects: ['Notion', 'Your Notion subscription'],
+    patterns: {
+      amount: [
+        /\$(\d+\.?\d*)/gi,
+        /USD\s*\$?(\d+\.?\d*)/gi
+      ],
+      renewal: [
+        /next.*?billing.*?(\d{1,2})/gi
+      ]
+    },
+    defaultAmount: { USD: 8.00 },
+    category: 'productivity',
+    color: '#000000'
+  },
+
+  github: {
+    senders: ['noreply@github.com', 'billing@github.com'],
+    keywords: ['github'],
+    subjects: ['GitHub', 'Your GitHub subscription'],
+    patterns: {
+      amount: [
+        /\$(\d+\.?\d*)/gi,
+        /USD\s*\$?(\d+\.?\d*)/gi
+      ],
+      renewal: [
+        /next.*?billing.*?(\d{1,2})/gi
+      ]
+    },
+    defaultAmount: { USD: 4.00 },
+    category: 'development',
+    color: '#181717'
+  },
+
+  // 新增更多訂閱服務
+
+  adobe: {
+    senders: ['mail@adobe.com', 'noreply@adobe.com', 'invoice@adobe.com'],
+    keywords: ['adobe', 'creative cloud'],
+    subjects: ['Adobe', 'Creative Cloud', 'Your Adobe subscription'],
+    patterns: {
+      amount: [
+        /NT\$(\d+)/gi,
+        /USD\s*\$(\d+\.?\d*)/gi,
+        /\$(\d+\.?\d*)/gi
+      ],
+      renewal: [
+        /next.*?billing.*?(\d{1,2})/gi,
+        /renew.*?on.*?(\d{1,2})/gi
+      ]
+    },
+    defaultAmount: { TWD: 672, USD: 20.99 },
+    category: 'design',
+    color: '#FF0000'
+  },
+
+  microsoft: {
+    senders: ['msonlineservicesteam@microsoftonline.com', 'noreply@microsoft.com'],
+    keywords: ['microsoft', 'office 365', 'outlook', 'onedrive'],
+    subjects: ['Microsoft', 'Office 365', 'Your Microsoft subscription'],
+    patterns: {
+      amount: [
+        /NT\$(\d+)/gi,
+        /USD\s*\$(\d+\.?\d*)/gi,
+        /\$(\d+\.?\d*)/gi
+      ],
+      renewal: [
+        /next.*?billing.*?(\d{1,2})/gi
+      ]
+    },
+    defaultAmount: { TWD: 219, USD: 6.99 },
+    category: 'productivity',
+    color: '#0078D4'
+  },
+
+  amazon: {
+    senders: ['digital-no-reply@amazon.com', 'auto-confirm@amazon.com'],
+    keywords: ['amazon', 'prime'],
+    subjects: ['Amazon Prime', 'Amazon', 'Prime Video'],
+    patterns: {
+      amount: [
+        /NT\$(\d+)/gi,
+        /USD\s*\$(\d+\.?\d*)/gi,
+        /\$(\d+\.?\d*)/gi
+      ],
+      renewal: [
+        /next.*?billing.*?(\d{1,2})/gi,
+        /membership.*?renew.*?(\d{1,2})/gi
+      ]
+    },
+    defaultAmount: { TWD: 170, USD: 14.99 },
+    category: 'entertainment',
+    color: '#FF9900'
+  },
+
+  dropbox: {
+    senders: ['no-reply@dropbox.com', 'noreply@dropbox.com'],
+    keywords: ['dropbox'],
+    subjects: ['Dropbox', 'Your Dropbox subscription'],
+    patterns: {
+      amount: [
+        /\$(\d+\.?\d*)/gi,
+        /USD\s*\$?(\d+\.?\d*)/gi
+      ],
+      renewal: [
+        /next.*?billing.*?(\d{1,2})/gi
+      ]
+    },
+    defaultAmount: { USD: 9.99 },
+    category: 'cloud',
+    color: '#0061FF'
+  },
+
+  canva: {
+    senders: ['hello@canva.com', 'noreply@canva.com'],
+    keywords: ['canva'],
+    subjects: ['Canva', 'Your Canva Pro subscription'],
+    patterns: {
+      amount: [
+        /\$(\d+\.?\d*)/gi,
+        /USD\s*\$?(\d+\.?\d*)/gi
+      ],
+      renewal: [
+        /next.*?billing.*?(\d{1,2})/gi
+      ]
+    },
+    defaultAmount: { USD: 12.99 },
+    category: 'design',
+    color: '#00C4CC'
+  },
+
+  figma: {
+    senders: ['no-reply@figma.com', 'billing@figma.com'],
+    keywords: ['figma'],
+    subjects: ['Figma', 'Your Figma subscription'],
+    patterns: {
+      amount: [
+        /\$(\d+\.?\d*)/gi,
+        /USD\s*\$?(\d+\.?\d*)/gi
+      ],
+      renewal: [
+        /next.*?billing.*?(\d{1,2})/gi
+      ]
+    },
+    defaultAmount: { USD: 12.00 },
+    category: 'design',
+    color: '#F24E1E'
+  },
+
+  slack: {
+    senders: ['feedback@slack.com', 'noreply@slack.com'],
+    keywords: ['slack'],
+    subjects: ['Slack', 'Your Slack subscription'],
+    patterns: {
+      amount: [
+        /\$(\d+\.?\d*)/gi,
+        /USD\s*\$?(\d+\.?\d*)/gi
+      ],
+      renewal: [
+        /next.*?billing.*?(\d{1,2})/gi
+      ]
+    },
+    defaultAmount: { USD: 6.67 },
+    category: 'productivity',
+    color: '#4A154B'
+  },
+
+  zoom: {
+    senders: ['no-reply@zoom.us', 'noreply@zoom.us'],
+    keywords: ['zoom'],
+    subjects: ['Zoom', 'Your Zoom subscription'],
+    patterns: {
+      amount: [
+        /\$(\d+\.?\d*)/gi,
+        /USD\s*\$?(\d+\.?\d*)/gi
+      ],
+      renewal: [
+        /next.*?billing.*?(\d{1,2})/gi
+      ]
+    },
+    defaultAmount: { USD: 14.99 },
+    category: 'productivity',
+    color: '#2D8CFF'
+  },
+
+  // 通用訂閱模式 - 當無法識別特定服務時使用
+  generic: {
+    senders: [],
+    keywords: ['subscription', 'billing', 'payment', 'renewal', '訂閱', '帳單', '付款'],
+    subjects: [],
+    patterns: {
+      amount: [
+        /NT\$(\d+)/gi,
+        /USD\s*\$(\d+\.?\d*)/gi,
+        /\$(\d+\.?\d*)/gi,
+        /(\d+).*?元/gi,
+        /(\d+\.\d{2})/gi
+      ],
+      renewal: [
+        /(\d{1,2}).*?日.*?(扣款|付款|續費)/gi,
+        /(\d{1,2}).*?號.*?(扣款|付款|續費)/gi,
+        /next.*?billing.*?(\d{1,2})/gi,
+        /renewal.*?date.*?(\d{1,2})/gi,
+        /charge.*?on.*?(\d{1,2})/gi
+      ]
+    },
+    defaultAmount: { TWD: 100, USD: 9.99 },
+    category: 'other',
+    color: '#6B7280'
   }
 };
 
@@ -110,7 +361,10 @@ export class EmailParser {
   static identifyService(sender, subject, body = '') {
     const text = `${sender} ${subject} ${body}`.toLowerCase();
     
+    // 首先檢查特定服務（排除通用模式）
     for (const [serviceKey, config] of Object.entries(subscriptionPatterns)) {
+      if (serviceKey === 'generic') continue; // 跳過通用模式
+      
       // 檢查寄件者
       if (config.senders.some(senderPattern => 
         sender.toLowerCase().includes(senderPattern.toLowerCase())
@@ -121,6 +375,18 @@ export class EmailParser {
       // 檢查關鍵字
       if (config.keywords.some(keyword => text.includes(keyword))) {
         return serviceKey;
+      }
+    }
+    
+    // 如果無法識別特定服務，檢查是否符合通用訂閱模式
+    const genericConfig = subscriptionPatterns.generic;
+    if (genericConfig.keywords.some(keyword => text.includes(keyword))) {
+      // 額外檢查是否包含金額或日期資訊，提高準確度
+      const hasAmount = genericConfig.patterns.amount.some(pattern => pattern.test(text));
+      const hasDate = genericConfig.patterns.renewal.some(pattern => pattern.test(text));
+      
+      if (hasAmount || hasDate) {
+        return 'generic';
       }
     }
     
@@ -224,17 +490,22 @@ export class EmailParser {
     const config = subscriptionPatterns[service];
     const text = `${email.subject} ${email.body || ''}`;
     
-    const amount = this.extractAmount(text, config.patterns) || config.defaultAmount.TWD;
+    const amount = this.extractAmount(text, config.patterns) || this.getDefaultAmount(config, text);
     const renewalDate = this.extractRenewalDate(text, config.patterns);
     const plan = this.extractPlan(text, config.patterns);
     const currency = this.detectCurrency(text);
     const confidence = this.calculateConfidence(email, config);
 
-    if (!renewalDate && confidence < 50) return null;
+    // 對於通用模式，降低準確度要求但仍需要基本資訊
+    const minConfidence = service === 'generic' ? 30 : 50;
+    if (!renewalDate && confidence < minConfidence) return null;
+
+    // 改善服務名稱顯示
+    const serviceName = this.getServiceDisplayName(service, email.from, email.subject);
 
     return {
-      name: service.charAt(0).toUpperCase() + service.slice(1),
-      plan: plan || '標準方案',
+      name: serviceName,
+      plan: plan || '預設方案',
       amount: amount,
       currency: currency,
       renewalDate: renewalDate || this.calculateNextRenewalDate(15), // 預設15號
@@ -249,5 +520,38 @@ export class EmailParser {
         date: email.date
       }
     };
+  }
+
+  // 獲取預設金額（考慮貨幣）
+  static getDefaultAmount(config, text) {
+    const currency = this.detectCurrency(text);
+    if (config.defaultAmount[currency]) {
+      return config.defaultAmount[currency];
+    }
+    // 如果沒有對應貨幣，回傳第一個可用的
+    return Object.values(config.defaultAmount)[0] || 0;
+  }
+
+  // 改善服務名稱顯示
+  static getServiceDisplayName(service, from, subject) {
+    if (service === 'generic') {
+      // 從寄件者或主旨中提取可能的服務名稱
+      const fromDomain = from.split('@')[1]?.replace(/\.com|\.net|\.org/gi, '');
+      if (fromDomain && fromDomain !== 'gmail' && fromDomain !== 'yahoo' && fromDomain !== 'outlook') {
+        return fromDomain.charAt(0).toUpperCase() + fromDomain.slice(1);
+      }
+      
+      // 從主旨中查找品牌名稱
+      const subjectWords = subject.split(/\s+/);
+      for (const word of subjectWords) {
+        if (word.length > 3 && /^[A-Za-z]/.test(word)) {
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        }
+      }
+      
+      return '未知服務';
+    }
+    
+    return service.charAt(0).toUpperCase() + service.slice(1);
   }
 }

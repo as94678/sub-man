@@ -43,12 +43,13 @@ export class GmailService {
             discoveryDocs: this.config.DISCOVERY_DOCS
           };
 
-          // 如果有 API Key 就加入
+          // 如果有 API Key 就加入（雖然使用 OAuth token 時不是必需的）
           if (this.config.API_KEY) {
             initConfig.apiKey = this.config.API_KEY;
           }
 
           await window.gapi.client.init(initConfig);
+          console.log('Gmail API 初始化成功');
 
           // 初始化 OAuth 2.0 token client (GIS)
           this.tokenClient = window.google.accounts.oauth2.initTokenClient({
@@ -89,8 +90,15 @@ export class GmailService {
     // 首先檢查是否已有 Gmail token（來自登入時取得的）
     const existingGmailToken = localStorage.getItem('gmail_access_token');
     if (existingGmailToken) {
-      console.log('使用現有的 Gmail access token');
+      console.log('使用現有的 Gmail access token:', existingGmailToken.substring(0, 20) + '...');
       this.accessToken = existingGmailToken;
+      
+      // 立即設定 token 給 gapi client
+      this.gapi.client.setToken({
+        access_token: this.accessToken
+      });
+      console.log('已設定 access token 給 gapi client');
+      
       return true;
     }
 
@@ -128,6 +136,11 @@ export class GmailService {
       throw new Error('未授權，請先進行 Gmail 授權');
     }
 
+    // 設定 access token 給 gapi client
+    this.gapi.client.setToken({
+      access_token: this.accessToken
+    });
+
     const query = this.buildSearchQuery();
     
     try {
@@ -144,33 +157,86 @@ export class GmailService {
       return messages;
     } catch (error) {
       console.error('搜尋郵件失敗:', error);
+      
+      // 如果是 401 錯誤，嘗試重新授權
+      if (error.status === 401) {
+        console.log('Access token 可能已過期，嘗試重新授權');
+        // 清除過期的 token
+        localStorage.removeItem('gmail_access_token');
+        this.accessToken = null;
+        throw new Error('授權已過期，請重新嘗試');
+      }
+      
       throw new Error('搜尋郵件失敗，請檢查網路連線');
     }
   }
 
-  // 建立搜尋查詢字串
+  // 建立搜尋查詢字串 - 一個月內的訂閱相關郵件
   buildSearchQuery() {
-    const keywords = [
-      'subscription', 'billing', 'invoice', 'renewal', 'payment',
-      '訂閱', '帳單', '續約', '扣款', '付費', '會員'
+    // 計算一個月前的日期
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const dateString = oneMonthAgo.toISOString().split('T')[0].replace(/-/g, '/');
+
+    // 廣泛的訂閱相關關鍵詞
+    const subscriptionKeywords = [
+      'subscription', 'billing', 'invoice', 'receipt', 'payment', 'charged',
+      'renewal', 'renew', 'monthly', 'plan', 'membership', 'premium',
+      'your payment', 'payment confirmation', 'bill', 'transaction',
+      'auto-renewal', 'automatic', 'recurring', 'charge', 'debit',
+      '訂閱', '帳單', '付款', '扣款', '續費', '會員', '月費', '年費',
+      '自動續費', '自動扣款', '定期付款', '定期扣款', '會員費用',
+      '订阅', '账单', '付费', '扣费', '续费', '会员费', '包月', '包年'
     ];
-    
-    const services = [
-      'Netflix', 'Spotify', 'YouTube', 'Disney+', 'Apple',
-      'Amazon Prime', 'Microsoft', 'Adobe', 'Dropbox',
-      'Office 365', 'iCloud', 'Google One'
+
+    // 服務相關詞彙
+    const serviceIndicators = [
+      'service', 'account', 'pro', 'plus', 'premium', 'upgrade',
+      'plan', 'tier', 'package', 'bundle', 'family', 'individual',
+      'team', 'business', 'enterprise', 'student', 'personal'
     ];
+
+    // 知名訂閱服務名稱
+    const popularServices = [
+      'netflix', 'spotify', 'youtube', 'disney', 'apple', 'google',
+      'microsoft', 'adobe', 'amazon', 'prime', 'dropbox', 'icloud',
+      'office365', 'notion', 'github', 'anthropic', 'openai', 'chatgpt',
+      'claude', 'canva', 'figma', 'slack', 'zoom', 'teams'
+    ];
+
+    // 訂閱服務常見發件人域名模式
+    const commonDomains = [
+      'from:noreply@', 'from:no-reply@', 'from:billing@', 'from:support@',
+      'from:account@', 'from:notifications@', 'from:invoice@', 'from:receipts@'
+    ];
+
+    // 支付平台關鍵詞
+    const paymentPlatforms = [
+      'paypal', 'stripe', 'visa', 'mastercard', 'amex', 'discover',
+      'apple pay', 'google pay', '信用卡', '金融卡', '付費平台'
+    ];
+
+    // 結合所有關鍵詞
+    const keywordQuery = `(${subscriptionKeywords.join(' OR ')})`;
+    const serviceQuery = `(${serviceIndicators.join(' OR ')})`;
+    const servicesQuery = `(${popularServices.join(' OR ')})`;
+    const domainQuery = `(${commonDomains.join(' OR ')})`;
+    const paymentQuery = `(${paymentPlatforms.join(' OR ')})`;
     
-    // 結合關鍵字和服務名稱
-    const keywordQuery = `(${keywords.join(' OR ')})`;
-    const serviceQuery = `(${services.join(' OR ')})`;
-    
-    return `${keywordQuery} AND ${serviceQuery}`;
+    // 使用更寬泛的搜索條件，捕捉各種可能的訂閱郵件
+    return `after:${dateString} (${keywordQuery} OR ${serviceQuery} OR ${servicesQuery} OR ${domainQuery} OR ${paymentQuery})`;
   }
 
   // 獲取郵件詳細內容
   async getEmailDetails(messageId) {
     try {
+      // 確保 access token 已設定
+      if (this.accessToken) {
+        this.gapi.client.setToken({
+          access_token: this.accessToken
+        });
+      }
+
       const response = await this.gapi.client.gmail.users.messages.get({
         userId: 'me',
         id: messageId,
@@ -178,6 +244,20 @@ export class GmailService {
       });
 
       const message = response.result;
+      
+      // 輸出原始 JSON 結構供調試
+      console.log(`🔍 郵件 ${messageId} 原始結構:`, {
+        id: message.id,
+        snippet: message.snippet,
+        payload: {
+          headers: message.payload.headers,
+          body: message.payload.body,
+          parts: message.payload.parts,
+          mimeType: message.payload.mimeType
+        },
+        internalDate: message.internalDate
+      });
+
       const headers = message.payload.headers;
 
       return {
@@ -185,7 +265,8 @@ export class GmailService {
         date: new Date(parseInt(message.internalDate)),
         subject: this.getHeader(headers, 'Subject') || '',
         from: this.getHeader(headers, 'From') || '',
-        body: this.extractEmailBody(message.payload)
+        body: this.extractEmailBody(message.payload),
+        rawMessage: message // 保留原始訊息供進階調試
       };
     } catch (error) {
       console.error(`獲取郵件 ${messageId} 失敗:`, error);

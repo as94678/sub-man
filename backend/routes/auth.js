@@ -145,9 +145,13 @@ router.post('/google', async (req, res) => {
     } catch (verifyError) {
       // 如果驗證失敗，嘗試解析自定義的 token（來自我們的 OAuth 流程）
       try {
-        payload = JSON.parse(Buffer.from(idToken, 'base64').toString());
+        // 解碼 base64 然後 decodeURIComponent 來處理 Unicode 字符
+        const decoded = Buffer.from(idToken, 'base64').toString();
+        const decodedPayload = decodeURIComponent(decoded);
+        payload = JSON.parse(decodedPayload);
         console.log('使用自定義 token 格式');
       } catch (parseError) {
+        console.error('解析自定義 token 失敗:', parseError);
         return res.status(400).json({ error: '無效的 Google Token' });
       }
     }

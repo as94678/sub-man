@@ -35,6 +35,7 @@ const GoogleSignInButton = ({ onSuccess, className = "" }) => {
       const tokenClient = window.google.accounts.oauth2.initTokenClient({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
         scope: 'openid email profile https://www.googleapis.com/auth/gmail.readonly',
+        ux_mode: 'popup', // 使用彈出視窗模式避免 COOP 問題
         callback: async (tokenResponse) => {
           setLocalLoading(true);
           try {
@@ -44,15 +45,18 @@ const GoogleSignInButton = ({ onSuccess, className = "" }) => {
             );
             const userInfo = await userInfoResponse.json();
 
-            // 創建 ID token 模擬物件給後端
-            const mockCredential = btoa(JSON.stringify({
+            // 創建 ID token 模擬物件給後端，使用安全的編碼方式
+            const payload = {
               iss: 'https://accounts.google.com',
               sub: userInfo.id,
               email: userInfo.email,
               name: userInfo.name,
               picture: userInfo.picture,
               access_token: tokenResponse.access_token // 包含 access token
-            }));
+            };
+            
+            // 使用 btoa + encodeURIComponent 來處理 Unicode 字符
+            const mockCredential = btoa(encodeURIComponent(JSON.stringify(payload)));
 
             const result = await googleLogin(mockCredential);
             if (result.success) {
