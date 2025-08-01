@@ -21,7 +21,9 @@ export const AuthProvider = ({ children }) => {
           setUser(response.user);
         } catch (error) {
           console.error('獲取用戶資訊失敗:', error);
+          // 清除無效的token
           authAPI.logout();
+          setUser(null);
         }
       }
       setLoading(false);
@@ -62,6 +64,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Google 登入
+  const googleLogin = async (idToken) => {
+    try {
+      setError(null);
+      setLoading(true);
+      const response = await authAPI.googleLogin(idToken);
+      setUser(response.user);
+      return { success: true, user: response.user };
+    } catch (error) {
+      setError(error.message);
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 登出
   const logout = () => {
     authAPI.logout();
@@ -75,6 +93,7 @@ export const AuthProvider = ({ children }) => {
     error,
     login,
     register,
+    googleLogin,
     logout,
     isAuthenticated: !!user,
   };

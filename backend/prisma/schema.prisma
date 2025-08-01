@@ -13,8 +13,11 @@ datasource db {
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
-  password  String
+  password  String?  // Google 用戶不需要密碼，設為可選
   name      String
+  provider  String   @default("local") // local, google
+  googleId  String?  @unique @map("google_id") // Google 用戶的唯一 ID
+  avatar    String?  // Google 頭像 URL
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

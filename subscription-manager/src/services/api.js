@@ -76,6 +76,20 @@ export const authAPI = {
     return response;
   },
 
+  // Google 登入
+  googleLogin: async (idToken) => {
+    const response = await apiRequest('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ idToken }),
+    });
+    
+    if (response.token) {
+      setAuthToken(response.token);
+    }
+    
+    return response;
+  },
+
   // 登出
   logout: () => {
     clearAuthToken();

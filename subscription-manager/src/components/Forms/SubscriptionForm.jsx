@@ -5,6 +5,7 @@ import { CATEGORIES, COLORS } from '../../data/initialData';
 import { CURRENCIES } from '../../utils/currency';
 import { formatCurrency, convertToBaseCurrency } from '../../utils/currency';
 import ServiceSelector from './ServiceSelector';
+import GmailScanner from '../GmailScanner';
 
 const SubscriptionForm = ({ 
   subscription, 
@@ -22,6 +23,8 @@ const SubscriptionForm = ({
     category: '娛樂',
     color: '#3B82F6'
   });
+  
+  const [showGmailScanner, setShowGmailScanner] = useState(false);
 
   const isEditing = !!subscription;
 
@@ -59,11 +62,47 @@ const SubscriptionForm = ({
     }));
   };
 
+  // 處理 Gmail 掃描結果
+  const handleGmailResults = (foundSubscriptions) => {
+    if (foundSubscriptions.length > 0) {
+      const subscription = foundSubscriptions[0]; // 取第一個結果
+      setFormData(prev => ({
+        ...prev,
+        name: subscription.name,
+        price: subscription.amount.toString(),
+        currency: subscription.currency,
+        renewalDate: subscription.renewalDate,
+        category: subscription.category,
+        color: subscription.color || prev.color
+      }));
+      setShowGmailScanner(false); // 關閉掃描器
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit}>
-      <h3 className="text-lg font-semibold mb-4">
-        {isEditing ? '編輯訂閱' : '新增訂閱'}
-      </h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">
+          {isEditing ? '編輯訂閱' : '新增訂閱'}
+        </h3>
+        {!isEditing && (
+          <button
+            type="button"
+            onClick={() => setShowGmailScanner(!showGmailScanner)}
+            className="text-sm bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            📧 Gmail 掃描
+          </button>
+        )}
+      </div>
+
+
+      {/* Gmail 掃描器 */}
+      {showGmailScanner && (
+        <div className="mb-6">
+          <GmailScanner onSubscriptionsFound={handleGmailResults} />
+        </div>
+      )}
       
       <div className="space-y-4">
         {/* 智能服務選擇器 */}
@@ -247,6 +286,7 @@ const SubscriptionForm = ({
           {isEditing ? '更新' : '新增'}
         </button>
       </div>
+
     </form>
   );
 };

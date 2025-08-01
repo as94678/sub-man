@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import GoogleSignInButton from './GoogleSignInButton';
 
 const LoginForm = ({ onSwitchToRegister, isModal = false }) => {
   const { login, loading, error } = useAuth();
@@ -34,6 +35,14 @@ const LoginForm = ({ onSwitchToRegister, isModal = false }) => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  // 處理 Google 登入成功
+  const handleGoogleSuccess = (user) => {
+    if (isModal) {
+      window.location.reload(); // 重新整理以載入用戶資料
+    }
+    // 對於非模態框，useAuth 會自動更新狀態，不需要額外處理
   };
 
   const containerClass = isModal 
@@ -120,6 +129,12 @@ const LoginForm = ({ onSwitchToRegister, isModal = false }) => {
             </button>
           </div>
         </form>
+
+        {/* Google 登入 */}
+        <GoogleSignInButton 
+          onSuccess={handleGoogleSuccess}
+          className="mt-6"
+        />
       </div>
     </div>
   );
