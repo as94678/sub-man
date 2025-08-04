@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { CATEGORIES, COLORS } from '../../data/initialData';
 import { CURRENCIES } from '../../utils/currency';
 import { formatCurrency, convertToBaseCurrency } from '../../utils/currency';
-import ServiceSelector from './ServiceSelector';
+import EnhancedServiceSelector from './EnhancedServiceSelector';
+import { learnFromUserInput } from '../../utils/enhancedServiceSearch';
 import GmailScanner from '../GmailScanner';
 
 const SubscriptionForm = ({ 
@@ -40,6 +41,15 @@ const SubscriptionForm = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name || !formData.price) return;
+    
+    // 學習用戶輸入的服務（僅在新增時）
+    if (!isEditing) {
+      learnFromUserInput(formData.name, {
+        category: formData.category,
+        price: parseFloat(formData.price),
+        currency: formData.currency
+      });
+    }
     
     onSubmit({
       ...formData,
@@ -112,7 +122,7 @@ const SubscriptionForm = ({
           }`}>
             服務名稱
           </label>
-          <ServiceSelector
+          <EnhancedServiceSelector
             value={formData.name}
             onChange={(value) => handleInputChange('name', value)}
             onServiceSelect={handleServiceSelect}
@@ -122,7 +132,7 @@ const SubscriptionForm = ({
           <p className={`text-xs mt-1 ${
             darkMode ? 'text-gray-400' : 'text-gray-500'
           }`}>
-            💡 選擇熱門服務會自動填入價格和類別
+            💡 支援模糊搜索和大小寫不敏感。新服務會自動學習並在下次出現建議中 🎓
           </p>
         </div>
         

@@ -26,24 +26,6 @@ export function validateGmailConfig() {
   };
 }
 
-// 獲取設定指引
-export function getSetupInstructions() {
-  return {
-    steps: [
-      '1. 前往 Google Cloud Console (https://console.cloud.google.com/)',
-      '2. 建立新專案或選擇現有專案',
-      '3. 啟用 Gmail API',
-      '4. 建立 OAuth 2.0 憑證 (Web application)',
-      '5. 設定授權重新導向 URI: http://localhost:3000',
-      '6. 複製 Client ID',
-      '7. 在專案根目錄建立 .env.local 檔案',
-      '8. 加入: VITE_GOOGLE_CLIENT_ID=你的_client_id'
-    ],
-    envExample: `# .env.local
-VITE_GOOGLE_CLIENT_ID=123456789-abc123def456.apps.googleusercontent.com
-VITE_GOOGLE_API_KEY=AIzaSyA1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q (選用)`
-  };
-}
 
 // Debug 函數
 export function debugConfig() {

@@ -1,6 +1,6 @@
 // 服務 Icon 組件 - 根據服務名稱顯示對應的品牌 icon
 
-import { getServiceById, SUBSCRIPTION_SERVICES } from '../../data/subscriptionServices';
+import { ENHANCED_SUBSCRIPTION_SERVICES, userLearnedServices } from '../../data/enhancedSubscriptionServices';
 
 const ServiceIcon = ({ 
   serviceName, 
@@ -17,12 +17,18 @@ const ServiceIcon = ({
     xl: 'w-12 h-12 text-xl'
   };
 
-  // 根據服務名稱尋找對應的服務資料
+  // 根據服務名稱尋找對應的服務資料（包括用戶學習的服務）
   const findServiceByName = (name) => {
-    return SUBSCRIPTION_SERVICES.find(service => 
+    const allServices = [...ENHANCED_SUBSCRIPTION_SERVICES, ...userLearnedServices.learnedServices];
+    
+    return allServices.find(service => 
       service.name.toLowerCase() === name.toLowerCase() ||
       service.name.toLowerCase().includes(name.toLowerCase()) ||
-      name.toLowerCase().includes(service.name.toLowerCase())
+      name.toLowerCase().includes(service.name.toLowerCase()) ||
+      (service.aliases && service.aliases.some(alias => 
+        alias.toLowerCase() === name.toLowerCase() ||
+        alias.toLowerCase().includes(name.toLowerCase())
+      ))
     );
   };
 

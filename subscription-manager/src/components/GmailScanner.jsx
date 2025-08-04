@@ -15,7 +15,6 @@ const GmailScanner = ({ onSubscriptionsFound }) => {
   const [error, setError] = useState(null);
   const [emailsScanned, setEmailsScanned] = useState(0);
   const [totalEmails, setTotalEmails] = useState(0);
-  const [showSetupGuide, setShowSetupGuide] = useState(false);
   const [configValid, setConfigValid] = useState(false);
   const [debugEmails, setDebugEmails] = useState([]); // 儲存郵件用於調試
 
@@ -259,13 +258,10 @@ const GmailScanner = ({ onSubscriptionsFound }) => {
             開始掃描 Gmail
           </button>
         ) : (
-          <button
-            onClick={() => setShowSetupGuide(true)}
-            className="w-full bg-orange-600 text-white px-4 py-3 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
-          >
+          <div className="w-full bg-gray-400 text-white px-4 py-3 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
             <Settings className="w-5 h-5" />
-            設定 Gmail API
-          </button>
+            Gmail API 未設定
+          </div>
         )
       ) : status === 'error' ? (
         <div className="space-y-3">
@@ -281,15 +277,6 @@ const GmailScanner = ({ onSubscriptionsFound }) => {
             >
               重新開始
             </button>
-            {!configValid && (
-              <button
-                onClick={() => setShowSetupGuide(true)}
-                className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-1"
-              >
-                <Settings className="w-4 h-4" />
-                設定說明
-              </button>
-            )}
           </div>
         </div>
       ) : (
@@ -366,10 +353,6 @@ const GmailScanner = ({ onSubscriptionsFound }) => {
         </div>
       )}
 
-      {/* 設定指引彈出視窗 */}
-      {showSetupGuide && (
-        <GmailSetupGuide onClose={() => setShowSetupGuide(false)} />
-      )}
     </div>
   );
 };

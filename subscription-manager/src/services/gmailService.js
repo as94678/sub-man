@@ -130,8 +130,8 @@ export class GmailService {
     });
   }
 
-  // 搜尋訂閱相關郵件
-  async searchSubscriptionEmails() {
+  // 搜尋訂閱相關郵件 - 支援分頁搜尋
+  async searchSubscriptionEmails(maxPages = 3) {
     if (!this.accessToken) {
       throw new Error('未授權，請先進行 Gmail 授權');
     }
@@ -142,19 +142,44 @@ export class GmailService {
     });
 
     const query = this.buildSearchQuery();
+    let allMessages = [];
+    let pageToken = null;
+    let currentPage = 0;
     
     try {
-      const response = await this.gapi.client.gmail.users.messages.list({
-        userId: 'me',
-        q: query,
-        maxResults: 50,
-        labelIds: ['INBOX']
-      });
+      do {
+        currentPage++;
+        console.log(`正在搜尋第 ${currentPage} 頁郵件...`);
+        
+        const requestParams = {
+          userId: 'me',
+          q: query,
+          maxResults: 50,
+          labelIds: ['INBOX']
+        };
+        
+        if (pageToken) {
+          requestParams.pageToken = pageToken;
+        }
 
-      const messages = response.result.messages || [];
-      console.log(`找到 ${messages.length} 封可能的訂閱郵件`);
+        const response = await this.gapi.client.gmail.users.messages.list(requestParams);
+        const messages = response.result.messages || [];
+        
+        console.log(`第 ${currentPage} 頁找到 ${messages.length} 封郵件`);
+        allMessages = allMessages.concat(messages);
+        
+        pageToken = response.result.nextPageToken;
+        
+        // 如果已經找到足夠的郵件或達到最大頁數限制，就停止搜尋
+        if (allMessages.length >= 100 || currentPage >= maxPages) {
+          break;
+        }
+        
+      } while (pageToken && currentPage < maxPages);
 
-      return messages;
+      console.log(`總共找到 ${allMessages.length} 封可能的訂閱郵件`);
+      return allMessages;
+      
     } catch (error) {
       console.error('搜尋郵件失敗:', error);
       
@@ -177,6 +202,14 @@ export class GmailService {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
     const dateString = oneMonthAgo.toISOString().split('T')[0].replace(/-/g, '/');
+
+    // 特定發件人過濾 - 優先搜尋可信的發件人
+    const trustedSenders = [
+      'from:"Anthropic, PBC"',
+      'from:noreply@anthropic.com',
+      'from:billing@anthropic.com',
+      'from:support@anthropic.com'
+    ];
 
     // 廣泛的訂閱相關關鍵詞
     const subscriptionKeywords = [
@@ -216,15 +249,16 @@ export class GmailService {
       'apple pay', 'google pay', '信用卡', '金融卡', '付費平台'
     ];
 
-    // 結合所有關鍵詞
+    // 建立查詢 - 優先搜尋可信發件人，然後是一般訂閱郵件
+    const trustedSenderQuery = `(${trustedSenders.join(' OR ')})`;
     const keywordQuery = `(${subscriptionKeywords.join(' OR ')})`;
     const serviceQuery = `(${serviceIndicators.join(' OR ')})`;
     const servicesQuery = `(${popularServices.join(' OR ')})`;
     const domainQuery = `(${commonDomains.join(' OR ')})`;
     const paymentQuery = `(${paymentPlatforms.join(' OR ')})`;
     
-    // 使用更寬泛的搜索條件，捕捉各種可能的訂閱郵件
-    return `after:${dateString} (${keywordQuery} OR ${serviceQuery} OR ${servicesQuery} OR ${domainQuery} OR ${paymentQuery})`;
+    // 優先搜尋可信發件人的郵件，如果沒有再搜尋其他訂閱相關郵件
+    return `after:${dateString} (${trustedSenderQuery} OR (${keywordQuery} OR ${serviceQuery} OR ${servicesQuery} OR ${domainQuery} OR ${paymentQuery}))`;
   }
 
   // 獲取郵件詳細內容
@@ -260,9 +294,13 @@ export class GmailService {
 
       const headers = message.payload.headers;
 
+      const emailDate = new Date(parseInt(message.internalDate));
+      
       return {
         id: messageId,
-        date: new Date(parseInt(message.internalDate)),
+        date: emailDate,
+        receivedDate: emailDate.toISOString().split('T')[0], // 格式化為 YYYY-MM-DD
+        receivedTime: emailDate.toLocaleString('zh-TW'), // 本地化時間顯示
         subject: this.getHeader(headers, 'Subject') || '',
         from: this.getHeader(headers, 'From') || '',
         body: this.extractEmailBody(message.payload),

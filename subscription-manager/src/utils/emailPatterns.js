@@ -104,18 +104,31 @@ export const subscriptionPatterns = {
     color: '#007AFF'
   },
 
-  anthropic: {
-    senders: ['invoice+statements@mail.anthropic.com', 'noreply@anthropic.com'],
+  claude: {
+    senders: ['invoice+statements@mail.anthropic.com', 'noreply@anthropic.com', '"Anthropic, PBC"'],
     keywords: ['anthropic', 'claude'],
-    subjects: ['Your receipt from Anthropic', 'Anthropic', 'Claude'],
+    subjects: ['Your receipt from Anthropic', 'Anthropic', 'Claude', 'receipt from Anthropic, PBC'],
     patterns: {
       amount: [
         /\$(\d+\.?\d*)/gi,
-        /USD\s*\$?(\d+\.?\d*)/gi
+        /USD\s*\$?(\d+\.?\d*)/gi,
+        /(\d+\.\d{2})\s*USD/gi,
+        /Amount paid\s*\$(\d+\.?\d*)/gi,
+        /Total\s*\$(\d+\.?\d*)/gi
       ],
       renewal: [
         /next.*?billing.*?(\d{1,2})/gi,
-        /renew.*?on.*?(\d{1,2})/gi
+        /renew.*?on.*?(\d{1,2})/gi,
+        /billing.*?cycle.*?(\d{1,2})/gi,
+        /(\w{3})\s+(\d{1,2})\s*–\s*(\w{3})\s+(\d{1,2})/gi
+      ],
+      plan: [
+        /(Claude Pro|Claude Team|Claude Enterprise)/gi,
+        /Claude\s+(Pro|Team|Enterprise|Plus)/gi
+      ],
+      serviceName: [
+        /(Claude Pro|Claude Team|Claude Enterprise)/gi,
+        /Claude\s+(Pro|Team|Enterprise|Plus)/gi
       ]
     },
     defaultAmount: { USD: 20.00 },
@@ -431,24 +444,62 @@ export class EmailParser {
     return null;
   }
 
-  static calculateNextRenewalDate(day) {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+  static extractServiceName(text, patterns) {
+    if (!patterns.serviceName) return null;
+    
+    for (const pattern of patterns.serviceName) {
+      const matches = text.match(pattern);
+      if (matches) {
+        return matches[0]; // 返回完整匹配的服務名稱
+      }
+    }
+    return null;
+  }
+
+  static calculateNextRenewalDate(day, emailDate = null) {
+    // 如果有郵件接收日期，使用它作為基準
+    const baseDate = emailDate ? new Date(emailDate) : new Date();
+    const currentMonth = baseDate.getMonth();
+    const currentYear = baseDate.getFullYear();
     
     let renewalDate = new Date(currentYear, currentMonth, day);
     
-    // 如果日期已過，設定為下個月
-    if (renewalDate <= now) {
+    // 如果是收據郵件，通常是扣款後發送，所以下次扣款應該是下個月
+    if (emailDate) {
       renewalDate = new Date(currentYear, currentMonth + 1, day);
+    } else {
+      // 如果日期已過，設定為下個月
+      if (renewalDate <= baseDate) {
+        renewalDate = new Date(currentYear, currentMonth + 1, day);
+      }
     }
     
     return renewalDate.toISOString().split('T')[0];
   }
 
-  static detectCurrency(text) {
+  static detectCurrency(text, fromEmail = '') {
+    // 檢查明確的貨幣標示
     if (text.includes('NT$') || text.includes('TWD')) return 'TWD';
-    if (text.includes('USD') || text.includes('$')) return 'USD';
+    if (text.includes('USD')) return 'USD';
+    
+    // 針對特定服務的預設貨幣判斷
+    const lowerText = text.toLowerCase() + ' ' + fromEmail.toLowerCase();
+    
+    // 國際服務通常使用 USD
+    const internationalServices = ['anthropic', 'claude', 'openai', 'github', 'notion', 'figma', 'canva', 'dropbox', 'slack', 'zoom'];
+    if (internationalServices.some(service => lowerText.includes(service))) {
+      return 'USD';
+    }
+    
+    // 如果包含 $ 但沒有明確標示，根據服務判斷
+    if (text.includes('$')) {
+      // 檢查是否為國際服務
+      if (internationalServices.some(service => lowerText.includes(service))) {
+        return 'USD';
+      }
+      return 'TWD'; // 其他情況預設台幣
+    }
+    
     return 'TWD'; // 預設台幣
   }
 
@@ -490,18 +541,29 @@ export class EmailParser {
     const config = subscriptionPatterns[service];
     const text = `${email.subject} ${email.body || ''}`;
     
-    const amount = this.extractAmount(text, config.patterns) || this.getDefaultAmount(config, text);
-    const renewalDate = this.extractRenewalDate(text, config.patterns);
+    const amount = this.extractAmount(text, config.patterns) || this.getDefaultAmount(config, text, email.from);
+    let renewalDate = this.extractRenewalDate(text, config.patterns);
     const plan = this.extractPlan(text, config.patterns);
-    const currency = this.detectCurrency(text);
+    const currency = this.detectCurrency(text, email.from);
     const confidence = this.calculateConfidence(email, config);
+
+    // 嘗試從郵件內容提取具體的服務名稱
+    const extractedServiceName = this.extractServiceName(text, config.patterns);
+
+    // 如果沒有從郵件內容找到續費日期，使用郵件接收日期推算
+    if (!renewalDate && email.date) {
+      // 對於收據郵件，假設是當月已扣款，下次扣款是下個月同一天
+      const emailDate = new Date(email.date);
+      const renewalDay = emailDate.getDate();
+      renewalDate = this.calculateNextRenewalDate(renewalDay, email.date);
+    }
 
     // 對於通用模式，降低準確度要求但仍需要基本資訊
     const minConfidence = service === 'generic' ? 30 : 50;
     if (!renewalDate && confidence < minConfidence) return null;
 
-    // 改善服務名稱顯示
-    const serviceName = this.getServiceDisplayName(service, email.from, email.subject);
+    // 優先使用從郵件內容提取的服務名稱，否則使用預設顯示名稱
+    const serviceName = extractedServiceName || this.getServiceDisplayName(service, email.from, email.subject);
 
     return {
       name: serviceName,
@@ -517,14 +579,16 @@ export class EmailParser {
         id: email.id,
         from: email.from,
         subject: email.subject,
-        date: email.date
+        date: email.date,
+        receivedDate: email.receivedDate,
+        receivedTime: email.receivedTime
       }
     };
   }
 
   // 獲取預設金額（考慮貨幣）
-  static getDefaultAmount(config, text) {
-    const currency = this.detectCurrency(text);
+  static getDefaultAmount(config, text, fromEmail = '') {
+    const currency = this.detectCurrency(text, fromEmail);
     if (config.defaultAmount[currency]) {
       return config.defaultAmount[currency];
     }
@@ -552,6 +616,15 @@ export class EmailParser {
       return '未知服務';
     }
     
-    return service.charAt(0).toUpperCase() + service.slice(1);
+    // 特定服務的顯示名稱
+    const serviceDisplayNames = {
+      'claude': 'Claude AI',
+      'openai': 'OpenAI',
+      'chatgpt': 'ChatGPT',
+      'github': 'GitHub',
+      'anthropic': 'Claude AI' // 向後兼容
+    };
+    
+    return serviceDisplayNames[service] || service.charAt(0).toUpperCase() + service.slice(1);
   }
 }

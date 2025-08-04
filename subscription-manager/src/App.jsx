@@ -13,6 +13,7 @@ import FloatingAddButton from './components/Common/FloatingAddButton';
 import Modal from './components/Common/Modal';
 import AuthModal from './components/Auth/AuthModal';
 import ProfileView from './components/User/ProfileView';
+import DataManager from './components/Common/DataManager';
 
 import { useTheme } from './hooks/useTheme';
 import { useCurrency } from './hooks/useCurrency';
@@ -43,6 +44,7 @@ const MainApp = () => {
   const [showCurrencyConverter, setShowCurrencyConverter] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showDataManager, setShowDataManager] = useState(false);
 
   // 認證相關處理
   const handleShowLogin = () => setShowAuthModal(true);
@@ -92,6 +94,17 @@ const MainApp = () => {
     setShowAuthModal(false);
   };
 
+  // 數據管理相關處理
+  const handleDataImportComplete = (type, data) => {
+    if (type === 'subscriptions' && data) {
+      // 重新載入頁面以應用匯入的訂閱數據
+      window.location.reload();
+    } else if (type === 'reset') {
+      // 數據重置後重新載入頁面
+      window.location.reload();
+    }
+  };
+
   // 如果正在顯示個人資料頁面
   if (showProfile) {
     return (
@@ -109,6 +122,7 @@ const MainApp = () => {
           user={user}
           onLogout={logout}
           onShowProfile={() => setShowProfile(true)}
+          onShowDataManager={() => setShowDataManager(true)}
         />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <button
@@ -191,6 +205,7 @@ const MainApp = () => {
         onLogout={logout}
         onShowProfile={() => setShowProfile(true)}
         onShowLogin={handleShowLogin}
+        onShowDataManager={() => setShowDataManager(true)}
       />
 
       <CurrencyConverter
@@ -237,6 +252,16 @@ const MainApp = () => {
         onClose={handleCloseAuth}
         darkMode={darkMode}
       />
+
+      {/* 數據管理模態框 */}
+      {showDataManager && (
+        <DataManager
+          subscriptions={subscriptions}
+          onImportComplete={handleDataImportComplete}
+          darkMode={darkMode}
+          onClose={() => setShowDataManager(false)}
+        />
+      )}
     </div>
   );
 };

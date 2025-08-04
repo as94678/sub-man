@@ -1,7 +1,7 @@
 // src/components/Layout/Header.jsx
 
 import React, { useState } from 'react';
-import { Sun, Moon, RefreshCw, User, LogOut, Settings, LogIn } from 'lucide-react';
+import { Sun, Moon, RefreshCw, User, LogOut, Settings, LogIn, Database } from 'lucide-react';
 import { CURRENCIES } from '../../utils/currency';
 
 const Header = ({ 
@@ -15,7 +15,8 @@ const Header = ({
   user,
   onLogout,
   onShowProfile,
-  onShowLogin
+  onShowLogin,
+  onShowDataManager
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   return (
@@ -53,6 +54,15 @@ const Header = ({
               } transition-colors text-sm`}
             >
               匯率
+            </button>
+            <button
+              onClick={onShowDataManager}
+              className={`p-2 rounded-lg ${
+                darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
+              } transition-colors`}
+              title="數據管理"
+            >
+              <Database size={16} />
             </button>
             <button
               onClick={toggleTheme}
