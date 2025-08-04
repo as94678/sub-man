@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { INITIAL_SUBSCRIPTIONS, CATEGORIES, COLORS } from '../data/initialData';
 import { convertToBaseCurrency } from '../utils/currency';
 import { getUpcomingRenewals } from '../utils/calendar';
-import { subscriptionsAPI } from '../services/api';
+import { subscriptionAPI } from '../services/api';
 import { useAuth } from './useAuth.jsx';
 
 export const useSubscriptions = (baseCurrency, exchangeRates) => {
@@ -23,7 +23,7 @@ export const useSubscriptions = (baseCurrency, exchangeRates) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await subscriptionsAPI.getAll();
+      const data = await subscriptionAPI.getAll();
       
       // 轉換日期格式和數據類型
       const formattedData = data.map(sub => ({
@@ -97,7 +97,7 @@ export const useSubscriptions = (baseCurrency, exchangeRates) => {
 
     try {
       setError(null);
-      const newSubscription = await subscriptionsAPI.create({
+      const newSubscription = await subscriptionAPI.create({
         ...subscriptionData,
         price: parseFloat(subscriptionData.price)
       });
@@ -136,7 +136,7 @@ export const useSubscriptions = (baseCurrency, exchangeRates) => {
 
     try {
       setError(null);
-      const updatedSubscription = await subscriptionsAPI.update(subscriptionData.id, {
+      const updatedSubscription = await subscriptionAPI.update(subscriptionData.id, {
         ...subscriptionData,
         price: parseFloat(subscriptionData.price)
       });
@@ -171,7 +171,7 @@ export const useSubscriptions = (baseCurrency, exchangeRates) => {
 
     try {
       setError(null);
-      await subscriptionsAPI.delete(id);
+      await subscriptionAPI.delete(id);
       setSubscriptions(prev => prev.filter(sub => sub.id !== id));
       return { success: true };
     } catch (err) {
