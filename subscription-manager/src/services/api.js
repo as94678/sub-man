@@ -395,28 +395,77 @@ export const userAPI = {
   }
 };
 
-// 訂閱相關 API（如果需要的話，目前使用 useSubscriptions hook）
+// 訂閱相關 API（模擬後端，使用 localStorage）
 export const subscriptionAPI = {
-  // 這些函數目前由 useSubscriptions hook 處理
-  // 如果未來需要同步到後端，可以在這裡實現
-  
+  // 獲取所有訂閱
+  getAll: async () => {
+    await delay(200);
+    const subscriptions = JSON.parse(localStorage.getItem('subscriptions') || '[]');
+    return subscriptions;
+  },
+
+  // 創建訂閱
+  create: async (subscriptionData) => {
+    await delay(300);
+    const subscriptions = JSON.parse(localStorage.getItem('subscriptions') || '[]');
+    const newSubscription = {
+      ...subscriptionData,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString()
+    };
+    subscriptions.push(newSubscription);
+    localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+    return newSubscription;
+  },
+
+  // 更新訂閱
+  update: async (id, updates) => {
+    await delay(300);
+    const subscriptions = JSON.parse(localStorage.getItem('subscriptions') || '[]');
+    const index = subscriptions.findIndex(sub => sub.id === id);
+    
+    if (index === -1) {
+      throw new Error('訂閱不存在');
+    }
+    
+    subscriptions[index] = {
+      ...subscriptions[index],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    
+    localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+    return subscriptions[index];
+  },
+
+  // 刪除訂閱
+  delete: async (id) => {
+    await delay(200);
+    const subscriptions = JSON.parse(localStorage.getItem('subscriptions') || '[]');
+    const filteredSubscriptions = subscriptions.filter(sub => sub.id !== id);
+    
+    if (filteredSubscriptions.length === subscriptions.length) {
+      throw new Error('訂閱不存在');
+    }
+    
+    localStorage.setItem('subscriptions', JSON.stringify(filteredSubscriptions));
+    return { success: true };
+  },
+
+  // 兼容舊方法名稱
   getSubscriptions: async () => {
-    // 目前從localStorage讀取，由useSubscriptions處理
-    return { success: true, subscriptions: [] };
+    return await subscriptionAPI.getAll();
   },
 
   createSubscription: async (subscriptionData) => {
-    // 目前由useSubscriptions處理
-    return { success: true, subscription: subscriptionData };
+    return await subscriptionAPI.create(subscriptionData);
   },
 
   updateSubscription: async (id, updates) => {
-    // 目前由useSubscriptions處理
-    return { success: true, subscription: { id, ...updates } };
+    return await subscriptionAPI.update(id, updates);
   },
 
   deleteSubscription: async (id) => {
-    // 目前由useSubscriptions處理
-    return { success: true };
+    return await subscriptionAPI.delete(id);
   }
 };
