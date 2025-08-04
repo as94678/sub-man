@@ -249,6 +249,152 @@ export const authAPI = {
   }
 };
 
+// 用戶管理相關 API
+export const userAPI = {
+  // 獲取用戶資料
+  getProfile: async () => {
+    await delay(200);
+    
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('未登入');
+    }
+    
+    const tokenData = parseAuthToken(token);
+    const users = getUsersDB();
+    const user = users.find(u => u.id === tokenData.userId);
+    
+    if (!user) {
+      throw new Error('用戶不存在');
+    }
+    
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  },
+
+  // 獲取用戶統計
+  getStats: async () => {
+    await delay(200);
+    
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('未登入');
+    }
+    
+    const tokenData = parseAuthToken(token);
+    const users = getUsersDB();
+    const user = users.find(u => u.id === tokenData.userId);
+    
+    if (!user) {
+      throw new Error('用戶不存在');
+    }
+    
+    // 模擬統計資料
+    const subscriptions = JSON.parse(localStorage.getItem('subscriptions') || '[]');
+    const totalMonthlySpent = subscriptions.reduce((total, sub) => total + parseFloat(sub.price || 0), 0);
+    
+    return {
+      subscriptionCount: subscriptions.length,
+      totalMonthlySpent: totalMonthlySpent.toFixed(2),
+      accountCreated: user.createdAt,
+      memberSince: user.createdAt
+    };
+  },
+
+  // 更新用戶資料
+  updateProfile: async (updates) => {
+    await delay(500);
+    
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('未登入');
+    }
+    
+    const tokenData = parseAuthToken(token);
+    const users = getUsersDB();
+    const userIndex = users.findIndex(u => u.id === tokenData.userId);
+    
+    if (userIndex === -1) {
+      throw new Error('用戶不存在');
+    }
+    
+    // 更新用戶資料
+    users[userIndex] = {
+      ...users[userIndex],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    
+    saveUsersDB(users);
+    
+    const { password, ...userWithoutPassword } = users[userIndex];
+    return userWithoutPassword;
+  },
+
+  // 修改密碼
+  changePassword: async ({ currentPassword, newPassword }) => {
+    await delay(500);
+    
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('未登入');
+    }
+    
+    const tokenData = parseAuthToken(token);
+    const users = getUsersDB();
+    const userIndex = users.findIndex(u => u.id === tokenData.userId);
+    
+    if (userIndex === -1) {
+      throw new Error('用戶不存在');
+    }
+    
+    // 驗證當前密碼
+    if (users[userIndex].password !== currentPassword) {
+      throw new Error('目前密碼錯誤');
+    }
+    
+    // 更新密碼
+    users[userIndex].password = newPassword;
+    users[userIndex].updatedAt = new Date().toISOString();
+    
+    saveUsersDB(users);
+    
+    return { success: true };
+  },
+
+  // 刪除帳戶
+  deleteAccount: async (password) => {
+    await delay(500);
+    
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('未登入');
+    }
+    
+    const tokenData = parseAuthToken(token);
+    const users = getUsersDB();
+    const userIndex = users.findIndex(u => u.id === tokenData.userId);
+    
+    if (userIndex === -1) {
+      throw new Error('用戶不存在');
+    }
+    
+    // 驗證密碼
+    if (users[userIndex].password !== password) {
+      throw new Error('密碼錯誤');
+    }
+    
+    // 刪除用戶
+    users.splice(userIndex, 1);
+    saveUsersDB(users);
+    
+    // 清除認證
+    clearAuthToken();
+    
+    return { success: true };
+  }
+};
+
 // 訂閱相關 API（如果需要的話，目前使用 useSubscriptions hook）
 export const subscriptionAPI = {
   // 這些函數目前由 useSubscriptions hook 處理
