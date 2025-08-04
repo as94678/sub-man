@@ -1,6 +1,4 @@
-// API 服務層 - 處理所有後端 API 請求
-
-const API_BASE_URL = 'http://localhost:3001/api';
+// API 服務層 - 純前端模式，使用 localStorage 模擬後端
 
 // 獲取儲存的 token
 const getAuthToken = () => {
@@ -17,32 +15,35 @@ const clearAuthToken = () => {
   localStorage.removeItem('authToken');
 };
 
-// 基礎 fetch 包裝器
-const apiRequest = async (endpoint, options = {}) => {
-  const url = `${API_BASE_URL}${endpoint}`;
-  const token = getAuthToken();
-  
-  const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...options,
-  };
+// 模擬延遲的異步操作
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// 模擬用戶數據庫
+const getUsersDB = () => {
+  const users = localStorage.getItem('users_db');
+  return users ? JSON.parse(users) : [];
+};
+
+const saveUsersDB = (users) => {
+  localStorage.setItem('users_db', JSON.stringify(users));
+};
+
+// 生成簡單的用戶ID
+const generateUserId = () => {
+  return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+};
+
+// 生成簡單的認證token
+const generateAuthToken = (userId) => {
+  return btoa(JSON.stringify({ userId, timestamp: Date.now() }));
+};
+
+// 解析token獲取用戶ID
+const parseAuthToken = (token) => {
   try {
-    const response = await fetch(url, config);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || '請求失敗');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('API請求錯誤:', error);
-    throw error;
+    return JSON.parse(atob(token));
+  } catch {
+    return null;
   }
 };
 
@@ -50,144 +51,226 @@ const apiRequest = async (endpoint, options = {}) => {
 export const authAPI = {
   // 註冊
   register: async (userData) => {
-    const response = await apiRequest('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+    await delay(500); // 模擬網路延遲
     
-    if (response.token) {
-      setAuthToken(response.token);
+    const users = getUsersDB();
+    
+    // 檢查email是否已存在
+    const existingUser = users.find(user => user.email === userData.email);
+    if (existingUser) {
+      throw new Error('此email已經註冊過了');
     }
     
-    return response;
+    // 創建新用戶
+    const userId = generateUserId();
+    const newUser = {
+      id: userId,
+      name: userData.name,
+      email: userData.email,
+      password: userData.password, // 實際應用中應該要加密
+      createdAt: new Date().toISOString(),
+      avatar: null
+    };
+    
+    users.push(newUser);
+    saveUsersDB(users);
+    
+    // 生成token並保存
+    const token = generateAuthToken(userId);
+    setAuthToken(token);
+    
+    // 返回用戶資訊（不包含密碼）
+    const { password, ...userWithoutPassword } = newUser;
+    return {
+      success: true,
+      user: userWithoutPassword,
+      token
+    };
   },
 
   // 登入
   login: async (credentials) => {
-    const response = await apiRequest('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
+    await delay(500); // 模擬網路延遲
     
-    if (response.token) {
-      setAuthToken(response.token);
+    const users = getUsersDB();
+    
+    // 查找用戶
+    const user = users.find(u => 
+      u.email === credentials.email && u.password === credentials.password
+    );
+    
+    if (!user) {
+      throw new Error('電子郵件或密碼錯誤');
     }
     
-    return response;
+    // 生成token並保存
+    const token = generateAuthToken(user.id);
+    setAuthToken(token);
+    
+    // 返回用戶資訊（不包含密碼）
+    const { password, ...userWithoutPassword } = user;
+    return {
+      success: true,
+      user: userWithoutPassword,
+      token
+    };
   },
 
   // Google 登入
-  googleLogin: async (idToken) => {
-    const response = await apiRequest('/auth/google', {
-      method: 'POST',
-      body: JSON.stringify({ idToken }),
-    });
+  googleLogin: async (googleUser) => {
+    await delay(500); // 模擬網路延遲
     
-    if (response.token) {
-      setAuthToken(response.token);
+    const users = getUsersDB();
+    
+    // 檢查是否已有此Google用戶
+    let user = users.find(u => u.email === googleUser.email);
+    
+    if (!user) {
+      // 創建新的Google用戶
+      const userId = generateUserId();
+      user = {
+        id: userId,
+        name: googleUser.name,
+        email: googleUser.email,
+        avatar: googleUser.picture,
+        googleId: googleUser.sub,
+        createdAt: new Date().toISOString(),
+        loginMethod: 'google'
+      };
+      
+      users.push(user);
+      saveUsersDB(users);
+    } else {
+      // 更新現有用戶的Google信息
+      user.avatar = googleUser.picture;
+      user.googleId = googleUser.sub;
+      user.lastLoginAt = new Date().toISOString();
+      saveUsersDB(users);
     }
     
-    return response;
+    // 生成token並保存
+    const token = generateAuthToken(user.id);
+    setAuthToken(token);
+    
+    return {
+      success: true,
+      user,
+      token
+    };
   },
 
   // 登出
   logout: () => {
     clearAuthToken();
+    return { success: true };
   },
 
   // 獲取當前用戶資訊
   getCurrentUser: async () => {
-    return await apiRequest('/auth/me');
+    await delay(200); // 模擬網路延遲
+    
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('未登入');
+    }
+    
+    const tokenData = parseAuthToken(token);
+    if (!tokenData) {
+      throw new Error('無效的認證token');
+    }
+    
+    const users = getUsersDB();
+    const user = users.find(u => u.id === tokenData.userId);
+    
+    if (!user) {
+      throw new Error('用戶不存在');
+    }
+    
+    // 返回用戶資訊（不包含密碼）
+    const { password, ...userWithoutPassword } = user;
+    return {
+      success: true,
+      user: userWithoutPassword
+    };
   },
 
   // 檢查是否已登入
   isAuthenticated: () => {
-    return !!getAuthToken();
+    const token = getAuthToken();
+    if (!token) return false;
+    
+    const tokenData = parseAuthToken(token);
+    if (!tokenData) return false;
+    
+    // 檢查token是否過期（7天）
+    const tokenAge = Date.now() - tokenData.timestamp;
+    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7天
+    
+    if (tokenAge > maxAge) {
+      clearAuthToken();
+      return false;
+    }
+    
+    return true;
   },
+
+  // 更新用戶資料
+  updateProfile: async (updates) => {
+    await delay(500);
+    
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('未登入');
+    }
+    
+    const tokenData = parseAuthToken(token);
+    const users = getUsersDB();
+    const userIndex = users.findIndex(u => u.id === tokenData.userId);
+    
+    if (userIndex === -1) {
+      throw new Error('用戶不存在');
+    }
+    
+    // 更新用戶資料
+    users[userIndex] = {
+      ...users[userIndex],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    
+    saveUsersDB(users);
+    
+    // 返回更新後的用戶資訊（不包含密碼）
+    const { password, ...userWithoutPassword } = users[userIndex];
+    return {
+      success: true,
+      user: userWithoutPassword
+    };
+  }
 };
 
-// 訂閱相關 API
-export const subscriptionsAPI = {
-  // 獲取所有訂閱
-  getAll: async () => {
-    const response = await apiRequest('/subscriptions');
-    return response.subscriptions || [];
+// 訂閱相關 API（如果需要的話，目前使用 useSubscriptions hook）
+export const subscriptionAPI = {
+  // 這些函數目前由 useSubscriptions hook 處理
+  // 如果未來需要同步到後端，可以在這裡實現
+  
+  getSubscriptions: async () => {
+    // 目前從localStorage讀取，由useSubscriptions處理
+    return { success: true, subscriptions: [] };
   },
 
-  // 新增訂閱
-  create: async (subscriptionData) => {
-    const response = await apiRequest('/subscriptions', {
-      method: 'POST',
-      body: JSON.stringify(subscriptionData),
-    });
-    return response.subscription;
+  createSubscription: async (subscriptionData) => {
+    // 目前由useSubscriptions處理
+    return { success: true, subscription: subscriptionData };
   },
 
-  // 更新訂閱
-  update: async (id, subscriptionData) => {
-    const response = await apiRequest(`/subscriptions/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(subscriptionData),
-    });
-    return response.subscription;
+  updateSubscription: async (id, updates) => {
+    // 目前由useSubscriptions處理
+    return { success: true, subscription: { id, ...updates } };
   },
 
-  // 刪除訂閱
-  delete: async (id) => {
-    return await apiRequest(`/subscriptions/${id}`, {
-      method: 'DELETE',
-    });
-  },
+  deleteSubscription: async (id) => {
+    // 目前由useSubscriptions處理
+    return { success: true };
+  }
 };
-
-// 用戶管理相關 API
-export const userAPI = {
-  // 取得用戶完整資料
-  getProfile: async () => {
-    const response = await apiRequest('/user/profile');
-    return response.user;
-  },
-
-  // 更新用戶基本資料
-  updateProfile: async (profileData) => {
-    const response = await apiRequest('/user/profile', {
-      method: 'PUT',
-      body: JSON.stringify(profileData),
-    });
-    return response;
-  },
-
-  // 修改密碼
-  changePassword: async (passwordData) => {
-    return await apiRequest('/user/password', {
-      method: 'PUT',
-      body: JSON.stringify(passwordData),
-    });
-  },
-
-  // 更新用戶設定
-  updateSettings: async (settings) => {
-    const response = await apiRequest('/user/settings', {
-      method: 'PUT',
-      body: JSON.stringify(settings),
-    });
-    return response;
-  },
-
-  // 取得帳戶統計
-  getStats: async () => {
-    const response = await apiRequest('/user/stats');
-    return response.stats;
-  },
-
-  // 刪除帳戶
-  deleteAccount: async (password) => {
-    return await apiRequest('/user/account', {
-      method: 'DELETE',
-      body: JSON.stringify({ password }),
-    });
-  },
-};
-
-// 導出工具函數
-export { getAuthToken, setAuthToken, clearAuthToken };

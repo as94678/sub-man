@@ -258,10 +258,13 @@ const GmailScanner = ({ onSubscriptionsFound }) => {
             開始掃描 Gmail
           </button>
         ) : (
-          <div className="w-full bg-gray-400 text-white px-4 py-3 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
-            <Settings className="w-5 h-5" />
-            Gmail API 未設定
-          </div>
+          <button
+            onClick={handleScan}
+            className="w-full bg-orange-600 text-white px-4 py-3 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+          >
+            <Search className="w-5 h-5" />
+            嘗試 Gmail 掃描
+          </button>
         )
       ) : status === 'error' ? (
         <div className="space-y-3">
