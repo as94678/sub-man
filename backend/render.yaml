@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: subscription-manager-backend
+    env: node
+    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: subscription-manager-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET  
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+
+databases:
+  - name: subscription-manager-db
+    databaseName: subscription_manager
+    user: subscription_user
