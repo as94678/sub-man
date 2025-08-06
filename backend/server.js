@@ -15,6 +15,7 @@ const PORT = process.env.PORT || 3001;
 const allowedOrigins = [
   'http://localhost:5173', 
   'http://localhost:3000',
+  'https://sub-man-new.vercel.app', // 明確添加前端 URL
   process.env.FRONTEND_URL // Vercel 部署的前端 URL
 ].filter(Boolean);
 
