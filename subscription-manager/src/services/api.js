@@ -109,7 +109,17 @@ export const authAPI = {
   // 檢查是否已登入
   isAuthenticated: () => {
     const token = getAuthToken();
-    return !!token;
+    if (!token) return false;
+    
+    // 檢查是否為有效的 JWT 格式
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      // 清除無效格式的 token
+      clearAuthToken();
+      return false;
+    }
+    
+    return true;
   },
 
   // 更新用戶資料
