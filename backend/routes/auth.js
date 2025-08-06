@@ -69,7 +69,16 @@ router.post('/register', async (req, res) => {
 
   } catch (error) {
     console.error('註冊錯誤:', error);
-    res.status(500).json({ error: '伺服器錯誤' });
+    
+    // 更詳細的錯誤信息
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: '該電子郵件已被註冊' });
+    }
+    
+    res.status(500).json({ 
+      error: '伺服器錯誤',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
