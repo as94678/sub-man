@@ -49,6 +49,16 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// 環境變數檢查 (僅用於調試)
+app.get('/debug', (req, res) => {
+  res.json({
+    nodeEnv: process.env.NODE_ENV,
+    hasJwtSecret: !!process.env.JWT_SECRET,
+    hasDatabaseUrl: !!process.env.DATABASE_URL,
+    jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0
+  });
+});
+
 // 404 處理
 app.use('*', (req, res) => {
   res.status(404).json({ error: '找不到請求的資源' });
