@@ -14,25 +14,31 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // 註冊
 router.post('/register', async (req, res) => {
   try {
+    console.log('註冊請求開始:', req.body);
     const { email, password, name } = req.body;
 
     // 驗證必填欄位
     if (!email || !password || !name) {
+      console.log('必填欄位驗證失敗:', { email: !!email, password: !!password, name: !!name });
       return res.status(400).json({ error: '所有欄位都是必填的' });
     }
 
+    console.log('開始檢查用戶是否存在...');
     // 檢查用戶是否已存在
     const existingUser = await prisma.user.findUnique({
       where: { email }
     });
 
     if (existingUser) {
+      console.log('用戶已存在:', email);
       return res.status(400).json({ error: '該電子郵件已被註冊' });
     }
 
+    console.log('開始加密密碼...');
     // 加密密碼
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    console.log('開始創建用戶...');
     // 建立用戶
     const user = await prisma.user.create({
       data: {
@@ -53,6 +59,7 @@ router.post('/register', async (req, res) => {
         createdAt: true
       }
     });
+    console.log('用戶創建成功:', user.id);
 
     // 產生 JWT
     const token = jwt.sign(
