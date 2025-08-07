@@ -79,6 +79,21 @@ app.listen(PORT, async () => {
   console.log(`Database URL exists: ${!!process.env.DATABASE_URL}`);
   console.log(`JWT Secret exists: ${!!process.env.JWT_SECRET}`);
   
+  // 在生產環境執行遷移
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      console.log('執行資料庫遷移...');
+      const { execSync } = await import('child_process');
+      execSync('npx prisma migrate deploy', { 
+        stdio: 'inherit',
+        cwd: '/opt/render/project/src/backend'
+      });
+      console.log('✅ 資料庫遷移完成');
+    } catch (error) {
+      console.error('❌ 資料庫遷移失敗:', error.message);
+    }
+  }
+  
   // 測試資料庫連接
   try {
     const { PrismaClient } = await import('@prisma/client');
