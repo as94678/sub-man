@@ -73,9 +73,20 @@ app.use((err, req, res, next) => {
 });
 
 // 啟動伺服器
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Database URL exists: ${!!process.env.DATABASE_URL}`);
   console.log(`JWT Secret exists: ${!!process.env.JWT_SECRET}`);
+  
+  // 測試資料庫連接
+  try {
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+    await prisma.$connect();
+    console.log('✅ Database connected successfully');
+    await prisma.$disconnect();
+  } catch (error) {
+    console.error('❌ Database connection failed:', error.message);
+  }
 });
