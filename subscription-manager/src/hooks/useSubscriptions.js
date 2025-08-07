@@ -29,7 +29,7 @@ export const useSubscriptions = (baseCurrency, exchangeRates) => {
       const formattedData = data.map(sub => ({
         ...sub,
         price: parseFloat(sub.price),
-        renewalDate: sub.renewalDate.split('T')[0], // 轉換為 YYYY-MM-DD 格式
+        renewalDate: sub.renewalDate ? sub.renewalDate.split('T')[0] : '', // 安全處理日期格式
       }));
       
       setSubscriptions(formattedData);
@@ -106,7 +106,7 @@ export const useSubscriptions = (baseCurrency, exchangeRates) => {
       const formattedSubscription = {
         ...newSubscription,
         price: parseFloat(newSubscription.price),
-        renewalDate: newSubscription.renewalDate.split('T')[0],
+        renewalDate: newSubscription.renewalDate ? newSubscription.renewalDate.split('T')[0] : '',
       };
       
       setSubscriptions(prev => [...prev, formattedSubscription]);

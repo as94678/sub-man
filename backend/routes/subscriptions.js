@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json({ subscriptions });
+    res.json(subscriptions);
   } catch (error) {
     console.error('取得訂閱錯誤:', error);
     res.status(500).json({ error: '伺服器錯誤' });
@@ -45,10 +45,7 @@ router.post('/', async (req, res) => {
       }
     });
 
-    res.status(201).json({
-      message: '訂閱建立成功',
-      subscription
-    });
+    res.status(201).json(subscription);
 
   } catch (error) {
     console.error('建立訂閱錯誤:', error);
