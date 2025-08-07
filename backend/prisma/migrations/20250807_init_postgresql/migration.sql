@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "users" (
-    "id" SERIAL NOT NULL PRIMARY KEY,
+    "id" SERIAL NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT,
     "name" TEXT NOT NULL,
@@ -8,22 +8,25 @@ CREATE TABLE "users" (
     "google_id" TEXT,
     "avatar" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "user_settings" (
-    "user_id" INTEGER NOT NULL PRIMARY KEY,
+    "user_id" INTEGER NOT NULL,
     "base_currency" TEXT NOT NULL DEFAULT 'USD',
     "theme" TEXT NOT NULL DEFAULT 'light',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-    CONSTRAINT "user_settings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+
+    CONSTRAINT "user_settings_pkey" PRIMARY KEY ("user_id")
 );
 
 -- CreateTable
 CREATE TABLE "subscriptions" (
-    "id" SERIAL NOT NULL PRIMARY KEY,
+    "id" SERIAL NOT NULL,
     "user_id" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
     "price" DECIMAL(65,30) NOT NULL,
@@ -33,11 +36,18 @@ CREATE TABLE "subscriptions" (
     "color" TEXT NOT NULL DEFAULT '#3B82F6',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-    CONSTRAINT "subscriptions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+
+    CONSTRAINT "subscriptions_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
--- CreateIndex  
+-- CreateIndex
 CREATE UNIQUE INDEX "users_google_id_key" ON "users"("google_id");
+
+-- AddForeignKey
+ALTER TABLE "user_settings" ADD CONSTRAINT "user_settings_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
