@@ -5,8 +5,10 @@ import authRoutes from './routes/auth.js';
 import subscriptionRoutes from './routes/subscriptions.js';
 import userRoutes from './routes/user.js';
 
-// 載入環境變數
-dotenv.config();
+// 載入環境變數（開發環境）
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -74,4 +76,6 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Database URL exists: ${!!process.env.DATABASE_URL}`);
+  console.log(`JWT Secret exists: ${!!process.env.JWT_SECRET}`);
 });
