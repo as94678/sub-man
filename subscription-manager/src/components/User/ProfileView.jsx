@@ -1,7 +1,7 @@
 // 會員資料管理頁面
 
 import { useState, useEffect } from 'react';
-import { User, Mail, Calendar, Settings, Lock, Trash2, BarChart3 } from 'lucide-react';
+import { User, Mail, Calendar, Settings, Lock, Trash2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.jsx';
 import { userAPI } from '../../services/api';
 
@@ -11,7 +11,6 @@ const ProfileView = ({ darkMode }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [stats, setStats] = useState(null);
 
   // 個人資料表單
   const [profileForm, setProfileForm] = useState({
@@ -39,16 +38,12 @@ const ProfileView = ({ darkMode }) => {
   const loadUserData = async () => {
     try {
       setLoading(true);
-      const [profile, statistics] = await Promise.all([
-        userAPI.getProfile(),
-        userAPI.getStats()
-      ]);
+      const profile = await userAPI.getProfile();
       
       setProfileForm({
-        name: profile.name || '',
-        email: profile.email || ''
+        name: profile.user?.name || profile.name || '',
+        email: profile.user?.email || profile.email || ''
       });
-      setStats(statistics);
     } catch (err) {
       setError('載入資料失敗');
     } finally {
@@ -124,7 +119,6 @@ const ProfileView = ({ darkMode }) => {
 
   const tabs = [
     { id: 'profile', label: '個人資料', icon: User },
-    { id: 'stats', label: '帳戶統計', icon: BarChart3 },
     { id: 'password', label: '修改密碼', icon: Lock },
     { id: 'delete', label: '刪除帳戶', icon: Trash2 }
   ];
@@ -221,29 +215,6 @@ const ProfileView = ({ darkMode }) => {
           </div>
         )}
 
-        {activeTab === 'stats' && stats && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4">帳戶統計</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                <h3 className="font-medium mb-2">訂閱數量</h3>
-                <p className="text-2xl font-bold text-blue-600">{stats.subscriptionCount}</p>
-              </div>
-              <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                <h3 className="font-medium mb-2">月總花費</h3>
-                <p className="text-2xl font-bold text-green-600">${stats.totalMonthlySpent}</p>
-              </div>
-              <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                <h3 className="font-medium mb-2">加入日期</h3>
-                <p className="text-sm">{formatDate(stats.accountCreated)}</p>
-              </div>
-              <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                <h3 className="font-medium mb-2">首次訂閱</h3>
-                <p className="text-sm">{formatDate(stats.memberSince)}</p>
-              </div>
-            </div>
-          </div>
-        )}
 
         {activeTab === 'password' && (
           <div>
